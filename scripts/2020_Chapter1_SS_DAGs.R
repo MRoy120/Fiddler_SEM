@@ -1,5 +1,3 @@
-source("scripts/2020_Chapter1_libraries.R")
-source("scripts/2020_data_cleaning.R")
 source("scripts/2020_Chapter1_SS_SEM.R")
 
 #### Soil Strength DAGs - PSEM Plots ####
@@ -74,8 +72,7 @@ grViz("digraph Soil_Strength {
   [6]: 'Year'
   [7]: 'Final Soil Strength'
       
-"
-)
+")
 
 ## Excluding Site and Year
 grViz("digraph Soil_Strength {
@@ -124,5 +121,4 @@ grViz("digraph Soil_Strength {
   [4]: 'Initial Soil Strength'
   [5]: 'Final Soil Strength'
       
-"
-)
+")
