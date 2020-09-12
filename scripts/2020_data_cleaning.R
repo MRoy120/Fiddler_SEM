@@ -1,26 +1,3 @@
-#### Load All Libraries ####
-library(dplyr)
-library(readr)
-library(tidyr)
-library(tidyverse)
-library(piecewiseSEM)
-library(dagitty)
-library(modelr)
-library(vcd)
-library(fitdistrplus)
-library(goft)
-library(MASS)
-library(readxl)
-library(car)
-library(DHARMa)
-library(DiagrammeR)
-library(semPlot)
-library(ggplot2)
-library(visreg)
-library(splines)
-library(Rmisc)
-library(lattice)
-
 #### Loading in My Data ####
 combined_data <- read_csv("data/Complete_CrabCageExp.csv")
 

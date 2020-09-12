@@ -12,7 +12,7 @@ editor_options:
 ---
 
 ```{r Libraries, warning=FALSE, cache=TRUE, message=FALSE, echo=FALSE}
-
+source("scripts/2020_Chapter1_libraries.R")
  
 ```
 
@@ -22,6 +22,7 @@ editor_options:
 
 ```{r Data Manipulation, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE, echo=FALSE}
 source("scripts/2020_data_cleaning.R")
+
 ```
 
 
