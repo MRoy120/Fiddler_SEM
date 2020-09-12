@@ -1376,463 +1376,6 @@ summary(combined_SEM)
 ```
 
 
-```{r Mussels}
-# Trying to see what happens when mussel density is included, 2018 only
-
-## Soil  Strength
-Post_Pene_combined_2018_lm <- lm(data = combined_data_full_2018, 
-                            Post_Pene_AVG ~ 
-                              Post_Burrow_Count + 
-                              Pre_Pene_AVG +
-                              Site +
-                              Post_Mussels +
-                              Pre_Live_SD *
-                              Post_Live_SD
-                             )
-summary(Post_Pene_combined_2018_lm)
-
-#Burrows
-Burrows_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
-                                 Post_Burrow_Count ~ 
-                                   Density_Num *
-                                   Pre_Pene_AVG +
-                                   Site +
-                                   Post_Mussels
-                                 ,
-                                 link = "log"
-                                 )
-summary(Burrows_combined_2018_NBglm)
-
-#Initial Soil Strength
-Pre_Pene_combined_2018_lm <- lm(data = combined_data_full_2018, 
-                           Pre_Pene_AVG ~
-                             Site 
-                           )
-summary(Pre_Pene_combined_2018_lm)
-
-#Spartina Biomass
-SB_Gamma_combined_2018_glm <- glm(data = combined_data_full_2018,
-                              Spartina_Biomass ~  
-                               Post_Burrow_Count +
-                               Pre_Live_SD * 
-                               Post_Live_SD +
-                               Pre_Pene_AVG +
-                               Density_Num +
-                               Post_Live_SD * 
-                               Post_Pene_AVG +
-                               Site +
-                               Post_Mussels,
-                               family = Gamma(link = "log")
-                             )
-summary(SB_Gamma_combined_2018_glm)
-
-#Final Shoot Density (SD)
-SD_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
-                            Post_Live_SD ~
-                              Post_Burrow_Count +
-                              Pre_Live_SD +
-                              Site +
-                              Post_Mussels,
-                            link = "log"
-                            )
-summary(SD_combined_2018_NBglm)
-
-SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
-plot(SD_nb_res_combined)
-
-#Final Mussel Count
-Mussels_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
-                                      Post_Mussels ~
-                                        Pre_Pene_AVG +
-                                        Pre_Live_SD +
-                                        Site,
-                                      link = "log"
-                                      )
-summary(Mussels_combined_2018_NBglm)
-
-#Running the combined model
-combined_SEM_2018 <- psem(Post_Pene_combined_2018_lm,
-                     Burrows_combined_2018_NBglm,
-                     SB_Gamma_combined_2018_glm,
-                     SD_combined_2018_NBglm,
-                     Pre_Pene_combined_2018_lm,
-                     Mussels_combined_2018_NBglm)
-
-summary(combined_SEM_2018)
-
-```
-
-```{r 2017 and 2018 separately}
-# 2017
-## Soil  Strength
-Post_Pene_combined_2017_lm_2 <- lm(data = combined_data_full_2017, 
-                            Post_Pene_AVG ~ 
-                              Post_Burrow_Count + 
-                              Pre_Pene_AVG +
-                              Site #+
-                              #Density_Num +
-                              #Post_Mussels +
-                              #Pre_Live_SD *
-                              #Post_Live_SD
-                             )
-summary(Post_Pene_combined_2017_lm_2)
-
-#Burrows
-Burrows_combined_2017_NBglm_2 <- glm.nb(data = combined_data_full_2017,
-                                 Post_Burrow_Count ~ 
-                                   Density_Num *
-                                   Pre_Pene_AVG +
-                                   Site #+
-                                   #Post_Mussels
-                                 ,
-                                 link = "log"
-                                 )
-summary(Burrows_combined_2017_NBglm_2)
-
-#Initial Soil Strength
-Pre_Pene_combined_2017_lm_2 <- lm(data = combined_data_full_2017, 
-                           Pre_Pene_AVG ~
-                             Site 
-                           )
-summary(Pre_Pene_combined_2017_lm_2)
-
-#Spartina Biomass
-Data_2017 <- filter(combined_data_full, Year %in% "2017")
-SB_Gamma_combined_2017_glm_2 <- glm(data = Data_2017,
-                              Spartina_Biomass ~  
-                               Post_Burrow_Count +
-                               Pre_Live_SD * 
-                               Post_Live_SD +
-                               Pre_Pene_AVG +
-                               Density_Num +
-                               Post_Live_SD * 
-                               Post_Pene_AVG +
-                               Site #+
-                               #Post_Mussels
-                              ,
-                               family = Gamma(link = "log")
-                             )
-summary(SB_Gamma_combined_2017_glm_2)
-
-#Final Shoot Density (SD)
-SD_combined_2017_NBglm_2 <- glm.nb(data = combined_data_full_2017,
-                            Post_Live_SD ~
-                              Post_Burrow_Count +
-                              Pre_Live_SD +
-                              Site #+
-                              #Post_Mussels
-                            ,
-                            link = "log"
-                            )
-summary(SD_combined_2017_NBglm_2)
-
-#SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
-#plot(SD_nb_res_combined)
-
-#Final Mussel Count
-#Mussels_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
-                                      #Post_Mussels ~
-                                        #Pre_Pene_AVG +
-                                        #Pre_Live_SD +
-                                        #Site,
-                                      #link = "log"
-                                      #)
-#summary(Mussels_combined_2018_NBglm)
-
-#Running the combined model
-combined_SEM_2017_2 <- psem(Post_Pene_combined_2017_lm_2,
-                     Burrows_combined_2017_NBglm_2,
-                     SB_Gamma_combined_2017_glm_2,
-                     SD_combined_2017_NBglm_2,
-                     Pre_Pene_combined_2017_lm_2#,
-                     #Mussels_combined_2018_NBglm
-                     )
-
-summary(combined_SEM_2017_2)
-
-# 2018
-## Soil  Strength
-Post_Pene_combined_2018_lm_2 <- lm(data = combined_data_full_2018, 
-                            Post_Pene_AVG ~ 
-                              Post_Burrow_Count + 
-                              Pre_Pene_AVG +
-                              Site# +
-                              #Density_Num +
-                              #Post_Mussels +
-                              #Pre_Live_SD *
-                              #Post_Live_SD
-                             )
-summary(Post_Pene_combined_2018_lm_2)
-
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Site))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Site + Year))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Site))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Year))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Site + Year))
-
-summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count + Site))
-summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count + Site + Pre_Pene_AVG))
-summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count))
-
-summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count + Site))
-summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count + Site + Pre_Pene_AVG))
-summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count))
-
-summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Year))
-summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Year))
-summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count))
-summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count + Year))
-summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count))
-summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count + Year))
-
-Post_Pene_combined_lm_2018 <- lm(data = combined_data_full_2018, 
-                              Post_Pene_AVG ~ 
-                                Site +
-                                Post_Burrow_Count + 
-                                Pre_Pene_AVG +
-                                Pre_Live_SD *
-                                Post_Live_SD
-                              )
-summary(Post_Pene_combined_lm_2018)
-
-Post_Pene_combined_lm_2017 <- lm(data = combined_data_full_2017, 
-                              Post_Pene_AVG ~ 
-                                Site +
-                                Post_Burrow_Count + 
-                                Pre_Pene_AVG +
-                                Pre_Live_SD *
-                                Post_Live_SD
-                              )
-summary(Post_Pene_combined_lm_2017)
-
-Post_Pene_combined_lm_Alt <- lm(data = Decomp_2018_3, 
-                              Post_Pene_AVG ~ 
-                                Site +
-                                Post_Burrow_Count + 
-                                Depth +
-                                End_Mass_LB +
-                                Pre_Pene_AVG +
-                                Pre_Live_SD *
-                                Post_Live_SD
-                              )
-summary(Post_Pene_combined_lm_Alt)
-summary(Post_Pene_combined_lm_2)
-summary(Post_Pene_combined_lm)
-
-visreg(Post_Pene_combined_lm,
-       "Post_Burrow_Count",
-       scale = "response",
-       by = "Year_Fac")
-
-visreg(Post_Pene_combined_lm,
-       "Post_Burrow_Count",
-       scale = "response",
-       by = "Site")
-
-visreg(Post_Pene_combined_lm_2018,
-       "Post_Burrow_Count",
-       scale = "response",
-       by = "Site")
-
-visreg(Post_Pene_combined_lm_2017,
-       "Post_Burrow_Count",
-       scale = "response",
-       by = "Site",
-       )
-
-visreg(Burrows_NBglm, 
-       "Pre_Pene_AVG", 
-       scale = "response", 
-       by = "Density_Num",
-       breaks = c(0, 4, 8, 12, 16, 20),
-       ylab = "Crab Burrow Density",
-       xlab = "Initial Soil Strength"
-       )
-
-ggplot(data = fidd_PIE, aes(x = Post_Burrow_Count,
-                            y = Post_Pene_AVG,
-                            color = Year)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ylab(label = "Final Soil Strength PIE")
-
-ggplot(data = fidd_NAN, aes(x = Post_Burrow_Count,
-                            y = Post_Pene_AVG,
-                            color = Year)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ylab(label = "Final Soil Strength NAN")
-
-ggplot(data = combined_data_full, aes(x = Post_Burrow_Count,
-                                      y = Post_Pene_AVG,
-                                      color = Location,
-                                      shape = Year)) +
-  geom_point() +
-  geom_smooth(method = "lm") +
-  ylab(label = "Final Soil Strength NAN")
-
-NAN_2017 <- combined_data_full %>%
-  filter(Location %in% "NAN") %>%
-  filter(Year %in% "2017")
-
-NAN_2018 <- combined_data_full %>%
-  filter(Location %in% "NAN") %>%
-  filter(Year %in% "2018")
-
-PIE_2017 <- combined_data_full %>%
-  filter(Location %in% "PIE") %>%
-  filter(Year %in% "2017")
-
-PIE_2018 <- combined_data_full %>%
-  filter(Location %in% "PIE") %>%
-  filter(Year %in% "2018")
-
-summary(lm(data = NAN_2017, Post_Pene_AVG ~ Post_Burrow_Count))
-summary(lm(data = NAN_2018, Post_Pene_AVG ~ Post_Burrow_Count))
-summary(lm(data = PIE_2017, Post_Pene_AVG ~ Post_Burrow_Count))
-summary(lm(data = PIE_2018, Post_Pene_AVG ~ Post_Burrow_Count))
-
-summary(lm(data = NAN_2017, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = NAN_2018, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = PIE_2017, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-summary(lm(data = PIE_2018, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
-plot(Post_Pene_AVG ~ Post_Burrow_Count, data = NAN_2018)
-
-summary(lm(data = NAN_2017, Post_Pene_AVG ~ Pre_Pene_AVG))
-summary(lm(data = NAN_2018, Post_Pene_AVG ~ Pre_Pene_AVG))
-summary(lm(data = PIE_2017, Post_Pene_AVG ~ Pre_Pene_AVG))
-summary(lm(data = PIE_2018, Post_Pene_AVG ~ Pre_Pene_AVG))
-
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG + Site))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG + Year))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG + Site + Year))
-summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG * (Site + Year)))
-summary(lm(data = combined_data_full, Pre_Pene_AVG ~ Site + Year))
-summary(lm(data = combined_data_full, Pre_Pene_AVG ~ Site * Year))
-
-model1 <- lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Site + Year_Fac)
-summary(model1)
-cor(combined_data_full, method = c("spearman"))
-
-d <- data.frame(x1=rnorm(10),
-                 x2=rnorm(10),
-                 x3=rnorm(10))
-
-e <- data.frame(SoilStrength = combined_data_full$Post_Pene_AVG,
-                Burrows = combined_data_full$Post_Burrow_Count,
-                Year = combined_data_full$Year_Fac,
-                Site = combined_data_full$Site)
-cor(e) # get correlations (returns matrix)
-vif(model1)
-vif(lm(Post_Pene_AVG ~ Post_Burrow_Count + Location + Year, data = combined_data_full))
-plot(model1, which=c(1,2,5))
-residualPlots(model1, test=FALSE)
-crPlots(model1, smooth=FALSE)
-visreg(model1)
-
-k_med_soil <- data.frame(Post_Pene_AVG = median(combined_data_full$Post_Pene_AVG),
-                         Post_Burrow_Count = seq(0,50, length.out = 100),
-                         Year_Fac = c(0,1),
-                         Site = c(0,1))
-k_med_soil <- cbind(k_med_soil, predict(model1, 
-                                        newdata = k_med_soil,
-                                        interval="confidence"))
-  
-ggplot() +
-  geom_point(data=combined_data_full, mapping = aes(x=Post_Burrow_Count, y = Post_Pene_AVG,
-                                                    color = Site)) +
-  geom_line(data = k_med_soil, mapping=aes(x=Post_Burrow_Count, y = Post_Pene_AVG,
-                                           color = Site), color="blue") +
-  geom_ribbon(data = k_med_soil, mapping = aes(x=Post_Burrow_Count, 
-                                                  ymin = lwr,
-                                                  ymax = upr),
-              fill="lightgrey", alpha=0.5)
-
-plot(PIE_2018, color = "Navy", main = "Matrix Scatterplot")
-
-
-#Burrows
-Burrows_combined_2018_NBglm_2 <- glm.nb(data = combined_data_full_2018,
-                                 Post_Burrow_Count ~ 
-                                   Density_Num *
-                                   Pre_Pene_AVG +
-                                   Site #+
-                                   #Post_Mussels
-                                 ,
-                                 link = "log"
-                                 )
-summary(Burrows_combined_2018_NBglm_2)
-
-#Initial Soil Strength
-Pre_Pene_combined_2018_lm_2 <- lm(data = combined_data_full_2018, 
-                           Pre_Pene_AVG ~
-                             Site 
-                           )
-summary(Pre_Pene_combined_2018_lm_2)
-
-#Spartina Biomass
-SB_Gamma_combined_2018_glm_2 <- glm(data = combined_data_full_2018,
-                              Spartina_Biomass ~  
-                               Post_Burrow_Count +
-                               Pre_Live_SD * 
-                               Post_Live_SD +
-                               Pre_Pene_AVG +
-                               Density_Num +
-                               Post_Live_SD * 
-                               Post_Pene_AVG +
-                               Site #+
-                               #Post_Mussels
-                              ,
-                               family = Gamma(link = "log")
-                             )
-summary(SB_Gamma_combined_2018_glm_2)
-
-#Final Shoot Density (SD)
-SD_combined_2018_NBglm_2 <- glm.nb(data = combined_data_full_2018,
-                            Post_Live_SD ~
-                              Post_Burrow_Count +
-                              Pre_Live_SD +
-                              Site #+
-                              #Post_Mussels
-                            ,
-                            link = "log"
-                            )
-summary(SD_combined_2018_NBglm_2)
-
-SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
-plot(SD_nb_res_combined)
-
-#Final Mussel Count
-#Mussels_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
-                                      #Post_Mussels ~
-                                        #Pre_Pene_AVG +
-                                        #Pre_Live_SD +
-                                        #Site,
-                                      #link = "log"
-                                      #)
-#summary(Mussels_combined_2018_NBglm)
-
-#Running the combined model
-combined_SEM_2018_2 <- psem(Post_Pene_combined_2018_lm_2,
-                     Burrows_combined_2018_NBglm_2,
-                     SB_Gamma_combined_2018_glm_2,
-                     SD_combined_2018_NBglm_2,
-                     Pre_Pene_combined_2018_lm_2#,
-                     #Mussels_combined_2018_NBglm
-                     )
-
-summary(combined_SEM_2018_2)
-
-```
-
-
 ## Soil and Production DAGs
 
 
@@ -2114,53 +1657,8 @@ visreg2d(SB_Gamma_combined_glm,
          #plot.type = "rgl"
          )
 
-visreg2d(SB_Gamma_combined_glm, 
-         "Post_Pene_AVG",
-         "Post_Live_SD",
-         scale = "response", 
-         main = "Spartina alterniflora Biomass",
-         #by = "Density_Num",
-         #breaks = c(0, 4, 8, 12, 16, 20),
-         ylab = "Final S. alterniflora Density",
-         xlab = "Final Soil Strength"#,
-         #plot.type = "rgl"
-         )
-
-#visreg2d(Burrows_combined_NBglm, 
-         #x = "Pre_Pene_AVG",
-         #y = "Pre_Live_SD",
-         #scale = "response", 
-         #main = "Burrow Density",
-         #by = "Density_Num",
-         #breaks = c(0, 4, 8, 12, 16, 20),
-         #ylab = "Initial S. alterniflora Density",
-         #xlab = "Initial Soil Strength"#,
-         #plot.type = "rgl"
-         #)
-
-visreg(SD_combined_2018_NBglm,
-       "Post_Mussels",
-       by = "Site",
-       scale = "response")
-
-visreg(Burrows_combined_2018_NBglm,
-       "Post_Mussels",
-       by = "Site",
-       scale = "response")
-
-
-visreg(SB_Gamma_combined_2018_glm,
-       "Post_Mussels",
-       by = "Site",
-       scale = "response")
-
 visreg(Post_Pene_combined_lm,
        "Post_Live_SD",
-       by = "Site",
-       scale = "response")
-
-visreg(SD_combined_NBglm,
-       "Post_Pene_AVG",
        by = "Site",
        scale = "response")
 
@@ -2760,14 +2258,14 @@ visreg::visreg2d(Decomp_lm_2,
          plot.type = "rgl"
          )
 
-visreg::visreg(Decomp_lm_2, 
-       "Post_Burrow_Count", 
+#visreg::visreg(Decomp_lm_2, 
+       #"Post_Burrow_Count", 
        #scale = "response", 
-       by = c("Depth", "Site"),
+       #by = c("Depth", "Site"),
        #breaks = c(0, 4, 8, 12, 16, 20),
-       ylab = "Decomposition Rate",
-       xlab = "Final Burrow Density"
-       )
+       #ylab = "Decomposition Rate",
+       #xlab = "Final Burrow Density"
+       #)
 
 
 ```
@@ -3029,7 +2527,7 @@ grViz("digraph Soil_Strength {
 ## New Decomp Visreg Plots
 
 ```{r New Decomp Visreg Plots}
-visreg2d(Decomp_lm_3, 
+visreg::visreg2d(Decomp_lm_3, 
          "Depth",
          "Post_Burrow_Count",
          scale = "response", 
@@ -3039,7 +2537,7 @@ visreg2d(Decomp_lm_3,
          ylab = "Burrow Density"
          )
 
-visreg(Decomp_lm_3, 
+visreg::visreg(Decomp_lm_3, 
        "Post_Burrow_Count", 
        scale = "response", 
        by = c("Depth"),
@@ -3053,7 +2551,7 @@ visreg(Decomp_lm_3,
   #aes(color = "Site")
 
 
-visreg(Decomp_lm_3, 
+visreg::visreg(Decomp_lm_3, 
        "Depth", 
        scale = "response", 
        by = c("Post_Burrow_Count"),
@@ -3167,7 +2665,7 @@ gamma_test(Burrow)
 ##
 ## Burrow Counts to be Used for Primary Production
 Burrows_Resid_PP <- combined_data_full %>%
-  add_residuals(Burrows_PP_NBGLM)
+  add_residuals(Burrows_combined_NBglm)
 
 #Let's compare predictor vs residuals, there should be no relationship
 qplot(Post_Burrow_Count, resid, data = Burrows_Resid_PP) +
@@ -3175,7 +2673,7 @@ qplot(Post_Burrow_Count, resid, data = Burrows_Resid_PP) +
 
 #What about fitted vs residuals
 Burrows_Resid_PP <- Burrows_Resid_PP %>%
-  add_predictions(Burrows_PP_NBGLM)
+  add_predictions(Burrows_combined_NBglm)
 
 #Plot it!
 qplot(pred, resid, data = Burrows_Resid_PP) +
@@ -3194,7 +2692,7 @@ shapiro.test(Burrows_Resid_PP$resid)
 #Finally, a histogram showing the spread of data
 hist(combined_data_full$Post_Burrow_Count)
 
-plot(Burrows_PP_NBGLM)
+plot(Burrows_combined_NBglm)
 
 #Looks pretty non-normal, and gamma distributed, and identical to the first test
 
@@ -3278,7 +2776,7 @@ Decomp_Resid <- Decomp_2018_3 %>%
   mutate(Decomp_resid = End_Mass_LB - mean(End_Mass_LB))
 
 Decomp_Resid_2 <- Decomp_2018_3 %>%
-  add_residuals(Decomp_lm)
+  add_residuals(Decomp_lm_2)
 
 #Let's compare predictor vs residuals, there should be no relationship
 qplot(End_Mass_LB, resid, data = Decomp_Resid_2) +
@@ -3286,7 +2784,7 @@ qplot(End_Mass_LB, resid, data = Decomp_Resid_2) +
 
 #What about fitted vs residuals
 Decomp_Resid_2 <- Decomp_Resid_2 %>%
-  add_predictions(Decomp_lm)
+  add_predictions(Decomp_lm_2)
 
 #Plot it!
 qplot(pred, resid, data = Decomp_Resid_2) +
@@ -3307,155 +2805,7 @@ hist(Decomp_2018_3$End_Mass_LB)
 
 #Great!  Decomposition looks pretty normal to me!
 
-#### Belowground Biomass ####
-BGB_Resid_2 <- BGB_Full_noNA %>%
-  add_residuals(BGB_lm)
-
-#Let's compare predictor vs residuals, there should be no relationship
-qplot(Mean_Core_Mass, resid, data = BGB_Resid_2) +
-  stat_smooth()
-
-#What about fitted vs residuals
-BGB_Resid_2 <- BGB_Resid_2 %>%
-  add_predictions(BGB_lm)
-
-#Plot it!
-qplot(pred, resid, data = BGB_Resid_2) +
-  stat_smooth()
-
-#Now qq plot
-qqnorm(BGB_Resid_2$resid)
-
-#Plot the spread of the residuals
-ggplot(data = BGB_Resid_2, mapping=aes(x=resid)) +
-  geom_density()
-
-#Test for normality using a Shapiro-Wilks Test
-shapiro.test(BGB_Resid_2$resid)
-
-#Finally, a histogram showing the spread of data
-hist(BGB_Full_noNA$Mean_Core_Mass)
-
-#Looks a little gamma-y to me, let's test it!
-fit_gamma_BGB <- fitdist(BGB_Full_noNA$Mean_Core_Mass, distr = "gamma", method = "mme")
-plot(fit_gamma_BGB)
-
-BGB_Log <- log(BGB_Full_noNA$Mean_Core_Mass)
-BGB_Log <- BGB_Log[BGB_Log > 0]
-gamma_test(BGB_Log)
-gamma_fit(BGB_Log)
-ks.test(BGB_Resid_2$resid, BGB_Resid_2$pred)
-
-#No, I guess it's normal
-
 ```
-
-
-```{r}
-
-
-
-Burrows_NBglm <- glm.nb(data = combined_data_full,
-                            Post_Burrow_Count ~ 
-                              Density_Num *
-                              poly(Pre_Pene_AVG,2) +
-                              Location +
-                              Year_Fac,
-                            link = "log"
-)
-
-Anova(Burrows_NBglm)
-
-Burrows_NBglm_loc <- glm.nb(data = combined_data_full,
-                            Post_Burrow_Count ~ 
-                              Density_Num *
-                              Location +
-                              Year_Fac,
-                            link = "log"
-)
-
-
-library(AICcmodavg)
-aictab(list(Burrows_NBglm_loc, Burrows_NBglm))
-
-
-visreg2d(Burrows_NBglm, xvar = "Density_Num", yvar = "Pre_Pene_AVG")
-
-
-ggplot(combined_data_full,
-       aes(x = Density_Num, y = Post_Burrow_Count, color = Location)) +
-  geom_point()
-
-
-
-ggplot(combined_data_full,
-       aes(x = Pre_Pene_AVG, y = Post_Burrow_Count, color =Location)) +
-  geom_point()
-
-
-library(modelr)
-dat <- data_grid(combined_data_full,
-                 Density_Num = c(0,5,10,15,20),
-                 Pre_Pene_AVG = 0:40,
-                 Location = c("NAN", "PIE"),
-                 Year_Fac = 1)
-
-
-pred_val <- add_predictions(dat, Burrows_NBglm, type = "response", var = "Post_Burrow_Count")
-
-
-
-ggplot(pred_val,
-       aes(x = Pre_Pene_AVG, y = Post_Burrow_Count, color = Location)) +
-  geom_line() +
-  facet_wrap(~Density_Num, scale = "free")
-
-
-
-
-dat2 <- data_grid(combined_data_full,
-                 Density_Num = 0:30,
-                 Pre_Pene_AVG = c(0,10,20,30,40),
-                 Location = c("NAN", "PIE"),
-                 Year_Fac = 1)
-
-
-pred_val2 <- add_predictions(dat2, Burrows_NBglm, type = "response", var = "Post_Burrow_Count")
-
-
-
-ggplot(pred_val2,
-       aes(x = Density_Num, y = Post_Burrow_Count, color = Location)) +
-  geom_line() +
-  facet_wrap(~Pre_Pene_AVG, scale = "free")
-
-
-#Center penetrometer by site
-combined_data_full <- combined_data_full %>%
-  dplyr::group_by(Location, Year_Fac) %>%
-  dplyr::mutate(pene_mean = mean(Pre_Pene_AVG),
-         pene_cent = Pre_Pene_AVG - pene_mean) %>%
-  ungroup()
-
-Burrows_NBglm_cent <- glm.nb(data = combined_data_full,
-                            Post_Burrow_Count ~ 
-                              Density_Num *
-                              poly(pene_cent, 2) +
-                              pene_mean, 
-                            link = "log"
-)
-
-Anova(Burrows_NBglm_cent)
-summary(Burrows_NBglm_cent)
-
-ggplot(combined_data_full,
-       aes(x = pene_cent, y = Post_Burrow_Count))+
-  geom_point())
-
-
-
-```
-
 
 
 
