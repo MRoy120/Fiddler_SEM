@@ -1,0 +1,3468 @@
+---
+title: "Chapter 1 SEM Analyses"
+author: "Michael Roy"
+output: 
+  
+  html_document:
+   toc: TRUE
+   toc_float: TRUE
+   theme: cosmo
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r Libraries, warning=FALSE, cache=TRUE, message=FALSE, echo=FALSE}
+#Load All Libraries
+library(dplyr)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(piecewiseSEM)
+library(dagitty)
+library(modelr)
+library(vcd)
+library(fitdistrplus)
+library(goft)
+library(MASS)
+library(readxl)
+library(car)
+library(DHARMa)
+library(DiagrammeR)
+library(semPlot)
+library(ggplot2)
+library(visreg)
+library(splines)
+library(Rmisc)
+library(lattice)
+ 
+```
+
+**Thank you everyone for all of your feedback!  Basically, what I'm looking for is what you guys think about these models. Are they clear?  Did I mess anything?  What conclusions would you draw from each one? What is important? What can I remove? Are there models that I missed? General thoughts?**
+
+**I'm going to go through each model in detail tomorrow, so don't worry about trying to piece everything together if things aren't clear!**
+
+```{r Data Manipulation, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE, echo=FALSE}
+#### Loading in My Data ####
+combined_data <- read_csv("../data/Complete_CrabCageExp.csv")
+
+#Make Year Discrete
+combined_data$Year <- as.character(combined_data$Year)
+
+#### Manipulating My Data ####
+#### The Dataset without Decomposition or Belowground Biomass ####
+#Filter out the treatments
+combined_data_controls <- filter(combined_data, Density_NN %in% c("Caged_Control"))
+
+combined_data_controls_PIE2017 <- filter(combined_data_controls, Location %in% "PIE")
+combined_data_controls_PIE2017 <- filter(combined_data_controls_PIE2017, Year %in% "2017")
+combined_data_controls_PIE2017 <- combined_data_controls_PIE2017 %>%
+  mutate(Mean_Burrows = mean(Post_Burrow_Count))
+  
+combined_data_controls_PIE2018 <- filter(combined_data_controls, Location %in% "PIE")
+combined_data_controls_PIE2018 <- filter(combined_data_controls_PIE2018, Year %in% "2018")
+combined_data_controls_PIE2018 <- combined_data_controls_PIE2018 %>%
+  mutate(Mean_Burrows = mean(Post_Burrow_Count))
+
+combined_data_controls_NAN2017 <- filter(combined_data_controls, Location %in% "NAN")
+combined_data_controls_NAN2017 <- filter(combined_data_controls_NAN2017, Year %in% "2017")
+combined_data_controls_NAN2017 <- combined_data_controls_NAN2017 %>%
+  mutate(Mean_Burrows = mean(Post_Burrow_Count) + 0.5)
+
+combined_data_controls_NAN2018 <- filter(combined_data_controls, Location %in% "NAN")
+combined_data_controls_NAN2018 <- filter(combined_data_controls_NAN2018, Year %in% "2018")
+combined_data_controls_NAN2018 <- combined_data_controls_NAN2018 %>%
+  mutate(Mean_Burrows = mean(Post_Burrow_Count))
+
+combined_data_controls_PIE <- full_join(combined_data_controls_PIE2017, combined_data_controls_PIE2018)
+combined_data_controls_NAN <- full_join(combined_data_controls_NAN2017, combined_data_controls_NAN2018)
+combined_data_controls_2 <- full_join(combined_data_controls_NAN, combined_data_controls_PIE)
+
+#Filter out the control plots
+combined_data_nocontrols <- filter(combined_data, Density_NN %in% c("Four", "Eight",
+                                                                    "Twelve", "Sixteen",
+                                                                    "Twenty"))
+
+combined_data_nocontrols_PIE2017 <- filter(combined_data_nocontrols, Location %in% "PIE")
+combined_data_nocontrols_PIE2017 <- filter(combined_data_nocontrols_PIE2017, Year %in% "2017")
+combined_data_nocontrols_PIE2017 <- combined_data_nocontrols_PIE2017 %>%
+  mutate(Mean_Burrows = 0)
+  
+combined_data_nocontrols_PIE2018 <- filter(combined_data_nocontrols, Location %in% "PIE")
+combined_data_nocontrols_PIE2018 <- filter(combined_data_nocontrols_PIE2018, Year %in% "2018")
+combined_data_nocontrols_PIE2018 <- combined_data_nocontrols_PIE2018 %>%
+  mutate(Mean_Burrows = 0)
+
+combined_data_nocontrols_NAN2017 <- filter(combined_data_nocontrols, Location %in% "NAN")
+combined_data_nocontrols_NAN2017 <- filter(combined_data_nocontrols_NAN2017, Year %in% "2017")
+combined_data_nocontrols_NAN2017 <- combined_data_nocontrols_NAN2017 %>%
+  mutate(Mean_Burrows = 6)
+
+combined_data_nocontrols_NAN2018 <- filter(combined_data_nocontrols, Location %in% "NAN")
+combined_data_nocontrols_NAN2018 <- filter(combined_data_nocontrols_NAN2018, Year %in% "2018")
+combined_data_nocontrols_NAN2018 <- combined_data_nocontrols_NAN2018 %>%
+  mutate(Mean_Burrows = 18)
+
+combined_data_nocontrols_PIE <- full_join(combined_data_nocontrols_PIE2017, combined_data_nocontrols_PIE2018)
+combined_data_nocontrols_NAN <- full_join(combined_data_nocontrols_NAN2017, combined_data_nocontrols_NAN2018)
+combined_data_nocontrols_2 <- full_join(combined_data_nocontrols_NAN, combined_data_nocontrols_PIE)
+
+#Now create a new column for no controls called Plot_Type = Treatment for no controls
+combined_data_nocontrols_2 <- combined_data_nocontrols_2 %>%
+  group_by(Location, Year) %>%
+  mutate(Plot_Type = "Treatment") %>%
+  ungroup()
+
+#Now do the same thing for the controls, Plot_Type = Control for no controls
+combined_data_controls_2 <- combined_data_controls_2 %>%
+  group_by(Location, Year) %>%
+  mutate(Plot_Type = "Control") %>%
+  ungroup()
+
+#Join the two data frames together
+combined_data_full <- full_join(combined_data_nocontrols_2, combined_data_controls_2)
+
+combined_data_full <- combined_data_full %>%
+  mutate(Burrow_Diff = abs(Post_Burrow_Count - Mean_Burrows))
+
+## Location/Site
+#Let's create a new column of site, and make it 0 and 1
+combined_data_full <- combined_data_full %>%
+  mutate(Site = as.numeric(recode_factor(Location,
+                       "NAN" = 0,
+                       "PIE" = 1))) 
+
+# Ok, for some reason, when I do the above, it makes one of the parameters 2
+# Let's make that 0
+combined_data_full$Site[combined_data_full$Site == "2"] <- "0"
+
+# Let's make that a number again
+combined_data_full$Site <- as.numeric(combined_data_full$Site)
+
+## Year
+#Let's make year a factor of 0 and 1
+combined_data_full <- combined_data_full %>%
+  mutate(Year_Fac = as.numeric(recode_factor(Year,
+                                "2017" = 0,
+                                "2018" = 1))) 
+
+# Ok, for some reason, when I do the above, it makes one of the parameters 2
+# Let's make that 0
+combined_data_full$Year_Fac[combined_data_full$Year_Fac == "2"] <- "0"
+
+# Let's make that a number again
+#combined_data_full$Year_Fac <- as.factor(combined_data_full$Year_Fac)
+combined_data_full$Year_Fac <- as.numeric(combined_data_full$Year_Fac)
+
+#Ok, let's look at it, and see if Site and Year are now numeric
+#str(combined_data_full)
+
+#OK, great!
+
+#Separate out the complete dataset by Year only
+combined_data_full_2017 <- filter(combined_data_full, Year %in% "2017")
+combined_data_full_2018 <- filter(combined_data_full, Year %in% "2018")
+#str(combined_data_full_2018)
+
+#Separate Out By Each Site
+#Nantucket
+fidd_NAN <- filter(combined_data_full, Location %in% "NAN")
+
+#Plum Island Estuary (PIE)
+fidd_PIE <- filter(combined_data_full, Location %in% "PIE")
+
+#Renaming Column Names
+combined_data_full_2 <- combined_data_full %>%
+  dplyr::select(Year, Year_Fac, Location, Site, Density_Num, Post_Burrow_Count, 
+                Pre_Live_SD, Post_Live_SD, Pre_Pene_AVG, Post_Pene_AVG, 
+                Spartina_Biomass) %>%
+  dplyr::rename(Crab_Density = "Density_Num",
+         Burrow_Density = "Post_Burrow_Count",
+         Initial_Soil_Strength = "Pre_Pene_AVG",
+         Final_Soil_Strength = "Post_Pene_AVG",
+         Initial_Spartina_Density = "Pre_Live_SD",
+         Final_Spartina_Density = "Post_Live_SD",
+         Spartina_Biomass = "Spartina_Biomass",
+         Year_NonFactor = "Year",
+         Year = "Year_Fac")
+  
+#### Decomposition ####
+#Load in the Decomp Data
+Decomp_2018 <- read_csv("../data/Decomp_Summer_2018_2.csv")
+Decomp_2018_Wider <- Decomp_2018 %>%
+  pivot_wider(names_from = Depth, values_from = End_Mass_LB)
+
+#Make Depth a Character
+Decomp_2018$Depth <- as.character(Decomp_2018$Depth)
+
+#Make Year a Character
+#Decomp_2018$Year <- as.character(Decomp_2018$Year)
+
+#Filter out 2018 data again, but for the raw combined_data Object
+combined_data_2018 <- filter(combined_data, Year %in% "2018")
+
+#Ok, select out Location, Cage_Num, Post_Burrow_Count, Post_Crab_Count
+Decomp_2 <- combined_data_2018 %>%
+  group_by(Location, Cage_Num, Post_Burrow_Count, Post_Crab_Count) %>%
+  dplyr::select(Location, Cage_Num, Post_Burrow_Count, Post_Crab_Count) %>%
+  ungroup()
+
+#OK, now join the two together
+Decomp_2018 <- full_join(Decomp_2, Decomp_2018) 
+Decomp_2018$Year <- as.character(Decomp_2018$Year)
+Decomp_2018_2 <- factor(Decomp_2018$Depth, levels = c("5", "15"))
+Decomp_2018_3 <- full_join(combined_data_full_2018, Decomp_2018) 
+Decomp_2018_3 <- na.omit(Decomp_2018_3)
+Decomp_2018_3$Depth <- as.numeric(Decomp_2018_3$Depth)
+#Decomp_2018_3$Depth <- as.character(Decomp_2018_3$Depth)
+#Decomp_2018_3$Depth <- as.factor(Decomp_2018_3$Depth)
+#Decomp_2018_3$Depth <- factor(Decomp_2018_3$Depth, labels=c("5","15"))
+
+Decomp_2018_Wider <- full_join(Decomp_2, Decomp_2018_Wider)
+Decomp_2018_Wider$Year <- as.character(Decomp_2018_Wider$Year)
+Decomp_2018_Wider_2 <- full_join(combined_data_full_2018, Decomp_2018_Wider)
+Decomp_2018_Wider_2 <- na.omit(Decomp_2018_Wider_2)
+
+Decomp_2018_4 <- Decomp_2018_3 %>%
+  dplyr::select(Year, Year_Fac, Location, Site, Density_Num, Post_Burrow_Count, 
+                Pre_Live_SD, Post_Live_SD, Pre_Pene_AVG, Post_Pene_AVG, 
+                Spartina_Biomass, Depth, End_Mass_LB) %>%
+  dplyr::rename(Crab_Density = "Density_Num",
+         Burrow_Density = "Post_Burrow_Count",
+         Initial_Soil_Strength = "Pre_Pene_AVG",
+         Final_Soil_Strength = "Post_Pene_AVG",
+         Initial_Spartina_Density = "Pre_Live_SD",
+         Final_Spartina_Density = "Post_Live_SD",
+         Spartina_Biomass = "Spartina_Biomass",
+         Year_NonFactor = "Year",
+         Year = "Year_Fac",
+         Final_Litterbag_Mass = "End_Mass_LB")
+
+#### Font Sizes and Colors ####
+
+My_Font_Sizes = theme(axis.title = element_text(face = "bold", size = 20), 
+                      axis.text = element_text(size = 16),
+                      legend.text = element_text(size = 16),
+                      legend.title = element_text(size = 18))
+
+Location_Colors_Line = scale_color_manual("Location", values = c("NAN" = "steelblue4", 
+                                                                "PIE" = "indianred4"))
+
+Location_Colors_Bar <- c(scale_fill_manual("Location", values = c("NAN" = "steelblue4", 
+                                                                  "PIE" = "indianred4")))
+
+Year_Colors_Line <- scale_color_manual("Year", values = c("2017" = "darkgreen", 
+                                                          "2018" = "slategray4"))
+
+Year_Colors_Bar <- scale_fill_manual("Year", values = c("2017" = "darkgreen", 
+                                                        "2018" = "slategray4"))
+
+PlotType_Colors_Line <- scale_color_manual("Plot Type", values = c("Control" = "tomato4", 
+                                                                   "Treatment" = "wheat"))
+
+PlotType_Colors_Bar <- scale_fill_manual("Plot Type", values = c("Control" = "tomato4", 
+                                                                 "Treatment" = "wheat"))
+
+Depth_Colors_Line <- scale_color_manual("Depth", values = c("5" = "darkgoldenrod2", 
+                                                            "15" = "papayawhip"))
+
+Depth_Colors_Bar <- scale_fill_manual("Depth", values = c("5" = "darkgoldenrod2", 
+                                                          "15" = "papayawhip"))
+
+Density_NN_Colors <- scale_color_manual("Initial Density", 
+                                           values = c("Control Plot" = "red4",
+                                                      "Caged Control" = "orange1",
+                                                      "Four" = "yellow1",
+                                                      "Eight" = "green4",
+                                                      "Twelve" = "azure2",
+                                                      "Sixteen" = "purple3",
+                                                      "Twenty" = "black"))
+
+Density_NN_Colors_2 <- scale_color_manual("Initial Density", 
+                                           values = c("Caged Control" = "orange1",
+                                                      "Four" = "yellow1",
+                                                      "Eight" = "green4",
+                                                      "Twelve" = "azure2",
+                                                      "Sixteen" = "purple3",
+                                                      "Twenty" = "black"))
+
+
+```
+
+
+
+
+
+# **Name Key Information**
+
+## Combined_Data_Full Name Key
+
+>Year = Year (Character, 2017 and 2018)
+
+>Location: NAN = Nantucket, PIE = Plum Island Estuary
+
+>Cage_Num = The First Number is the Replication, and the Second Number is the Initial Fiddler Crab Densities
+>Which Includes 0, 4, 8, 12, 16, and 20, so 1_4 is Replication 1, 4 crab treatment
+
+>Replication = Replication (there are four replications per site per year)
+
+>Density_NN = the initial crab density treatment
+
+>Density_Num = the number of crabs placed in each plot
+
+>Pre_Live_SD = Initial Live Spartina alterniflora density before the experiment started (Spartina Density, SD)
+
+>Pre_Dead_SD = Initial Dead Spartina alterniflora density before the experiment started (Spartina Density, SD)
+
+>Pre_Pene_1, Pre_Pene_2, Pre_Pene_3 = the three soil strength measurements at the beginning of the experiment
+>taken at the top left corner, the bottom left corner, and the bottom right corner, respectively (facing
+>the creek)
+
+>Pre_Pene_AVG = The average initial soil strength taken from each of the three measurments for the plot
+
+>Post_Live_SD = Final Live Spartina alterniflora density at the end of the experiment (Spartina Density, SD)
+
+>Post_Dead_SD = Final Dead Spartina alterniflora density at the end of the experiment (Spartina Density, SD)
+
+>Post_Pene_1, Post_Pene_2, Post_Pene_3 = the three soil strength measurements at the end of the experiment
+>taken at the top left corner, the bottom left corner, and the bottom right corner, respectively (facing
+>the creek)
+
+>Post_Pene_AVG = The average final soil strength taken from each of the three measurments for the plot
+
+>Post_Burrow_Count = Burrow Density at the end of the Experiment 
+
+>Spartina_Biomass = Dry biomass of Spartina alterniflora, clipped in the upper right corner of each plot
+
+>Site = The same as location, but as numeric and with 0s and 1s as locations, 0s are PIE, 1s are NAN
+
+>Year_Fac = The same as Year, but as numeric and with 0s and 1s as years, 0s are 2018, 1s are 2017 
+>(don't ask lol)
+
+>You can ignore the rest of the column names
+
+## Decomp_2018_3 Name Key
+
+**The names are the same for this object as Combined_Data_Full above with a couple of additions**
+
+>Depth = The Depth in cm that the litter bags filled with Spartina alterniflora were buried 
+
+>End_Mass_LB = The dry weight in g's of what was left in the litter bags (I know it says lb, which was an
+>oversight on my end, but it is what it is now lol)
+
+# **Piecewise SEM for Soil Strength**
+
+## Soil Strength Models
+
+```{r Piecewise - Final Soil Strength, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE}
+#### Building the Models - Final Soil Strength ####
+## Final Soil Strength
+Post_Pene_lm <- lm(data = combined_data_full, 
+                   Post_Pene_AVG ~
+                     Post_Burrow_Count + 
+                     Pre_Pene_AVG +
+                     Site +
+                     Year_Fac
+                   )
+summary(Post_Pene_lm)
+
+#Revised Names
+Post_Pene_lm_2 <- lm(data = combined_data_full_2, 
+                   Final_Soil_Strength ~
+                     Burrow_Density + 
+                     Initial_Soil_Strength +
+                     Site +
+                     Year
+                   )
+summary(Post_Pene_lm_2)
+
+#Burrows
+Burrows_NBglm <- glm.nb(data = combined_data_full,
+                        Post_Burrow_Count ~
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Site +
+                          Year_Fac
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm)
+
+Burrows_NBglm_alt <- glm.nb(data = combined_data_full,
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG *
+                          Site +
+                          Year_Fac
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm)
+
+#Let's compare a linear model to the NB
+Burrows_lm <- lm(data = combined_data_full,
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Year_Fac +
+                          Site
+                        )
+summary(Burrows_lm)
+
+#Let's also throw in gamma for kicks
+Burrows_glm <- glm(data = subset(combined_data_full, Post_Burrow_Count > 0),
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Year_Fac +
+                          Site +
+                          Mean_Burrows,
+                          family = Gamma(link = "log")
+                        )
+summary(Burrows_glm)
+
+#Pull the AIC and BIC values
+AIC(Burrows_NBglm, Burrows_lm, Burrows_NBglm_alt)
+BIC(Burrows_NBglm, Burrows_lm, Burrows_NBglm_alt)
+
+#Revised Names
+Burrows_NBglm_2 <- glm.nb(data = combined_data_full_2,
+                        Burrow_Density ~ 
+                          Crab_Density *
+                          Initial_Soil_Strength +
+                          Year +
+                          Site
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_2)
+
+#Initial Soil Strength
+Pre_Pene_lm <- lm(data = combined_data_full, 
+                   Pre_Pene_AVG ~
+                     Site +
+                     Year_Fac
+                   )
+summary(Pre_Pene_lm)
+summary(lm(data = combined_data_full, 
+           Pre_Pene_AVG ~ 
+             Post_Burrow_Count +
+             Site +
+             Year
+           ,
+           ))
+
+#Revised Names
+Pre_Pene_lm_2 <- lm(data = combined_data_full_2, 
+                   Initial_Soil_Strength ~
+                     Site +
+                     Year
+                   )
+summary(Pre_Pene_lm_2)
+
+#### Soil Strength Piecewise SEM ####
+#Original Names
+SS_Model <- psem(Burrows_NBglm,
+                 Post_Pene_lm,
+                 Pre_Pene_lm
+                 )
+summary(SS_Model)
+
+#Revised Names
+SS_Model_2 <- psem(Burrows_NBglm_2,
+                   Post_Pene_lm_2,
+                   Pre_Pene_lm_2
+                   )
+summary(SS_Model_2)
+
+```
+
+
+```{r Soil Strength Models By Site, warning=FALSE, cache=TRUE, message=FALSE}
+## NAN
+#Final Soil Strength
+Post_Pene_lm_NAN <- lm(data = fidd_NAN, 
+                   Post_Pene_AVG ~
+                     Post_Burrow_Count + 
+                     Pre_Pene_AVG +
+                     Year_Fac
+                   )
+summary(Post_Pene_lm_NAN)
+
+#Burrows
+Burrows_NBglm_NAN <- glm.nb(data = fidd_NAN,
+                        Post_Burrow_Count ~
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Year_Fac
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_NAN)
+
+#Initial Soil Strength
+Pre_Pene_lm_NAN <- lm(data = fidd_NAN, 
+                   Pre_Pene_AVG ~
+                     Year_Fac
+                   )
+summary(Pre_Pene_lm_NAN)
+
+#SEM
+SS_Model_NAN <- psem(Burrows_NBglm_NAN,
+                     Post_Pene_lm_NAN,
+                     Pre_Pene_lm_NAN
+                    )
+summary(SS_Model_NAN)
+plot(SS_Model_NAN, show = "Estimate")
+
+
+## PIE
+#Final Soil Strength
+Post_Pene_lm_PIE <- lm(data = fidd_PIE, 
+                   Post_Pene_AVG ~
+                     Post_Burrow_Count + 
+                     Pre_Pene_AVG +
+                     Year_Fac
+                   )
+summary(Post_Pene_lm_PIE)
+
+#Burrows
+Burrows_NBglm_PIE <- glm.nb(data = fidd_PIE,
+                        Post_Burrow_Count ~
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Year_Fac
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_PIE)
+
+#Initial Soil Strength
+Pre_Pene_lm_PIE <- lm(data = fidd_PIE, 
+                   Pre_Pene_AVG ~
+                     Year_Fac
+                   )
+summary(Pre_Pene_lm_PIE)
+
+#SEM
+SS_Model_PIE <- psem(Burrows_NBglm_PIE,
+                     Post_Pene_lm_PIE,
+                     Pre_Pene_lm_PIE
+                    )
+summary(SS_Model_PIE)
+plot(SS_Model_PIE, show = "Estimate")
+
+```
+
+## Soil Strength DAGs
+
+
+```{r Soil Strength DAGs, warning=FALSE, cache=TRUE, message=FALSE}
+plot(SS_Model, show = "Estimate")
+plot(SS_Model_2, show = "Estimate")
+
+# DiagrammeR Plots
+
+## Including Site and Year
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      Site [label = '@@5']
+      Year [label = '@@6']
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      Final_SS [label = '@@7']
+  
+      # Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+  
+  
+  # several 'edge' statements
+  edge [color = grey, arrowhead = normal, arrowtail = dot, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density
+  
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Site->Burrow_Density
+  Year->Burrow_Density
+  Burrow_Density->Final_SS [color = steelblue]
+  Site->Initial_SS
+  Year->Initial_SS
+  Site->Final_SS
+  Year->Final_SS
+  Initial_SS->Final_SS
+  
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Site'
+  [6]: 'Year'
+  [7]: 'Final Soil Strength'
+      
+"
+)
+
+## Excluding Site and Year
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14,
+             ranksep = .25]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      CrabSoil_Intrctn [label = '@@2', color = steelblue, height = 0.9]
+      Initial_SS [label = '@@4']
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Final_SS [label = '@@5']
+  
+  # several 'edge' statements
+  edge [color = grey, arrowhead = normal, minlen = 4, penwidth = 1]
+  Initial_SS->Burrow_Density [label = '-0.013']
+  Crab_Density->Burrow_Density [label = '-0.0085']
+  
+  edge [color = DimGray, arrowhead = normal, minlen = 6, penwidth = 5]
+  CrabSoil_Intrctn->Burrow_Density [color = steelblue, label = '0.0027']
+  Burrow_Density->Final_SS [color = steelblue, label = '-0.41']
+  Initial_SS->Final_SS [label = '0.32']
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Final Soil Strength'
+      
+"
+)
+
+
+```
+
+```{r DiagrammeR examples, warning=FALSE, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+grViz(" 
+  digraph CFA {
+    # Multiple level nodes
+    node [shape = ellipse, color=CornflowerBlue]
+    a [label = '@@1']; 
+    b [label = '@@2']; 
+    c [label = '@@3']; 
+    d [label = '@@4'];
+
+    # Terminal branch nodes
+    node [shape = box, color = Crimson] 
+    e [label = 'Model 2'];
+    f [label = 'Model 4'];
+    g [label = 'Model 5'];
+    h [label = 'Model 7'];
+    i [label = 'Model 8'];
+
+     # Connect nodes with edges and labels
+    a -> b [label = 'Condition 1a']
+    a -> d [label = 'Condition 1b'] 
+    b -> e [label = 'Condition 2a'] 
+    b -> c [label = 'Condition 2b']
+    c -> f [label = 'Condition 3a']
+    c -> g [label = 'Condition 3b']
+    d -> h [label = 'Condition 4a'] 
+    d -> i [label = 'Condition 4b'] 
+  }
+
+[1]: 'Split 1' 
+[2]: paste0('Model 1\\n Split 2') 
+[3]: paste0('Model 3\\n Split 3') 
+[4]: paste0('Model 6\\n Split 4') 
+") 
+
+grViz("
+  digraph CFA {
+    # latent variables
+    node [shape = ellipse, color=CornflowerBlue]
+    a [label = '@@1'];
+    b [label = '@@2'];
+    c [label = '@@3'];
+    d [label = '@@4'];
+
+    node [shape = box, color = Crimson]
+    e [label = 'Model 2'];
+    f [label = 'Model 4'];
+    g [label = 'Model 5'];
+    h [label = 'Model 7'];
+    i [label = 'Model 8'];
+
+    # Define arrow length for first group
+    edge [color = grey, minlen = 1]
+    a -> b [label = 'Condition 1a']
+    a -> d [label = 'Condition 1b']
+    b -> c [label = 'Condition 2b']
+    c -> f [label = 'Condition 3a']
+    c -> g [label = 'Condition 3b']
+
+    # Define edge length for models 2, 7 and 8
+    edge [color = grey, minlen = 2]
+    b -> e [label = 'Condition 2a']
+    d -> h [label = 'Condition 4a']
+    d -> i [label = 'Condition 4b']
+  } 
+
+[1]: 'Split 1'
+[2]: paste0('Model 1\\n Split 2')
+[3]: paste0('Model 3\\n Split 3')
+[4]: paste0('Model 6\\n Split 4')
+") 
+
+grViz("
+digraph boxes_and_circles {
+
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 10,
+  layout = twopi,
+       rankdir = LR]
+
+  # several 'node' statements
+  node [shape = box,
+        fontname = Helvetica]
+  A; B; C; D; E; F
+
+  node [shape = circle,
+        fixedsize = true,
+        width = 0.9] // sets as circles
+  1; 2; 3; 4; 5; 6; 7; 8
+
+  # several 'edge' statements
+  A->1 B->2 B->3 B->4 C->A
+  1->D E->A 2->4 1->5 1->F
+  E->6 4->6 5->7 6->7 3->8
+}
+"
+)
+
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+
+      # edge definitions with the node IDs
+      tab1 -> tab2 -> tab3 -> tab4 -> tab5;
+      }
+
+      [1]: 'Questionnaire sent to n=1000 participants'
+      [2]: 'Participants responded to questionnaire n=850'
+      [3]: 'Participants came to clinic for evaluation n=700'
+      [4]: 'Participants eligible for the study n=600'
+      [5]: 'Study sample n=600'
+      ")
+```
+
+
+## Soil Strength Visreg
+
+
+```{r Visreg Plot Comparison, warning=FALSE, cache=TRUE, message=FALSE}
+
+#### Visreg Plot Comparison ####
+#Initial Soil Strength to Final Burrow Density by Initial Crab Density
+visreg(Burrows_NBglm, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = "Density_Num",
+       breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength"
+       )
+
+#Initial Crab Density to Final Burrow Density by Soil Strength
+visreg(Burrows_NBglm, 
+       "Density_Num", 
+       scale = "response", 
+       by = c("Pre_Pene_AVG"),
+       breaks = c(0, 10, 20, 30),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Crab Density"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+#Initial Burrow Density to Final Burrow Density
+visreg(Burrows_NBglm, 
+       "Density_Num", 
+       scale = "response", 
+       #by = c("Pre_Pene_AVG"),
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Crab Density"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+#Initial Burrow Density to Final Burrow Density by Site
+visreg(Post_Pene_lm, 
+       "Post_Burrow_Count", 
+       #scale = "response", 
+       by = "Site",
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Final Soil Strength",
+       xlab = "Crab Burrow Density"
+       )
+
+#Initial Burrow Density to Final Burrow Density by Initial Soil Strength
+visreg(Post_Pene_lm, 
+       "Post_Burrow_Count", 
+       #scale = "response", 
+       by = "Pre_Pene_AVG",
+       breaks = c(0, 10, 20, 30),
+       ylab = "Final Soil Strength",
+       xlab = "Crab Burrow Density"
+       )
+
+#Initial Soil Strength to Final Soil Strength by Site
+visreg(Post_Pene_lm, 
+       "Pre_Pene_AVG", 
+       #scale = "response", 
+       by = "Site",
+       #breaks = c(0, 10, 20, 30),
+       ylab = "Final Soil Strength",
+       xlab = "Initial Soil Strength"
+       )
+
+##Initial Soil Strength to Final Soil Strength by Burrows
+visreg(Post_Pene_lm, 
+       "Pre_Pene_AVG", 
+       #scale = "response", 
+       by = "Post_Burrow_Count",
+       breaks = c(0, 10, 20, 30),
+       ylab = "Final Soil Strength",
+       xlab = "Initial Soil Strength"
+       )
+
+## Two and Three Dimensional Visreg models
+# Initial Soil Strength and Crab Density to Final Burrow Density Interaction 3D model
+visreg2d(Burrows_NBglm, 
+         "Pre_Pene_AVG",
+         "Density_Num",
+         scale = "response", 
+         by = "Density_Num",
+         breaks = c(0, 4, 8, 12, 16, 20),
+         #ylab = "Crab Burrow Density",
+         xlab = "Initial Soil Strength",
+         plot.type = "rgl"
+         )
+
+# Initial Soil Strength and Crab Density to Final Burrow Density Interaction Heat Map
+visreg2d(Burrows_NBglm, 
+         x="Pre_Pene_AVG",
+         y="Density_Num",
+         scale = "response", 
+         main = "Final Burrow Density",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial Crab Density",
+         xlab = "Initial Soil Strength",
+         #plot.type = "rgl"
+         )
+
+VRB_2 <- visreg2d(Burrows_NBglm, 
+         x="Pre_Pene_AVG",
+         y="Density_Num",
+         scale = "response", 
+         #type = "contrast",
+         main = "Final Burrow Density",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         color = c("black", "white", "red"),
+         ylab = "Initial Crab Density",
+         xlab = "Initial Soil Strength"#,
+         #plot.type = "persp"#,
+         #nn = 5#,
+         #plot.type = "rgl"
+         )
+
+VRB <- visreg2d(Burrows_NBglm, 
+         x="Pre_Pene_AVG",
+         y="Density_Num"#,
+         #scale = "response", 
+         #main = "Final Burrow Density"#,
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         #ylab = "Initial Crab Density",
+         #xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         )
+str(VRB)
+show(VRB)
+show(VRB_2)
+
+#By Site
+visreg(Burrows_NBglm, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = "Site",
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength"
+       )
+
+visreg(Post_Pene_lm, "Post_Burrow_Count", by = "Site", overlay = TRUE)
+
+fit <- lm(Ozone ~ Solar.R + Wind + Temp + I(Wind^2) + I(Temp^2) +
+I(Wind*Temp)+I(Wind*Temp^2) + I(Temp*Wind^2) + I(Temp^2*Wind^2),
+data=airquality)
+
+visreg2d(fit, x="Wind", y="Temp", plot.type="image")
+visreg2d(fit, x="Wind", y="Temp", plot.type="image",
+         color=c("purple", "green", "red"))
+visreg2d(fit, x="Wind", y="Temp", plot.type="persp")
+
+## Requires the rgl package
+# }
+# NOT RUN {
+visreg2d(fit,x="Wind",y="Temp",plot.type="rgl")
+# }
+# NOT RUN {
+## Requires the ggplot2 package
+# }
+# NOT RUN {
+visreg2d(fit, x="Wind", y="Temp", plot.type="gg")
+
+
+#OK, I'll model the same thing for Burrows_NBglm, but for each site
+#NAN
+Burrows_NBglm_NAN <- glm.nb(data = fidd_NAN,
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Year_Fac
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_NAN)
+
+#PIE
+Burrows_NBglm_PIE <- glm.nb(data = fidd_PIE,
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Year_Fac
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_PIE)
+summary(Burrows_NBglm)
+
+#NAN
+# Initial Soil Strength and Crab Density to Final Burrow Density Interaction Heat Map
+visreg2d(Burrows_NBglm_NAN, 
+         "Pre_Pene_AVG",
+         "Density_Num",
+         scale = "response", 
+         main = "Final Burrow Density NAN",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial Crab Density",
+         xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         )
+
+#NAN
+visreg(Burrows_NBglm_NAN, 
+       "Density_Num", 
+       scale = "response", 
+       by = c("Pre_Pene_AVG"),
+       breaks = c(0, 10, 20, 30),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Crab Density",
+       main = "NAN"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+visreg(Burrows_NBglm_NAN, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = c("Density_Num"),
+       breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength",
+       main = "NAN"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+visreg(Burrows_NBglm_NAN, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       #by = c("Density_Num"),
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength",
+       main = "NAN"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+#PIE
+# Initial Soil Strength and Crab Density to Final Burrow Density Interaction Heat Map
+visreg2d(Burrows_NBglm_PIE,
+         "Pre_Pene_AVG",
+         "Density_Num",
+         scale = "response", 
+         main = "Final Burrow Density PIE",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial Crab Density",
+         xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         )
+
+#PIE
+visreg(Burrows_NBglm_PIE, 
+       "Density_Num", 
+       scale = "response", 
+       by = c("Pre_Pene_AVG"),
+       breaks = c(0, 10, 20, 30),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Crab Density",
+       main = "PIE"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+visreg(Burrows_NBglm_PIE, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = c("Density_Num"),
+       breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength",
+       main = "PIE"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+#Compare Initial Soil Strength to Burrow Density
+ggplot(data = combined_data_full, 
+       mapping = aes(x = Pre_Pene_AVG, 
+                     y = Post_Burrow_Count, 
+                     color = Location
+                     )) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  ylab("Number of Burrows per Plot") +
+  xlab("Initial Soil Strength") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Line
+
+summary(lm(data = combined_data_full, Post_Burrow_Count ~ Pre_Pene_AVG * Location))
+summary(lm(data = fidd_PIE, Post_Burrow_Count ~ Pre_Pene_AVG))
+summary(lm(data = fidd_NAN, Post_Burrow_Count ~ Pre_Pene_AVG))
+
+
+#OK, I'll model the same thing for Burrows_NBglm, but for each year
+#NAN
+Burrows_NBglm_2017 <- glm.nb(data = combined_data_full_2017,
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Site
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_2017)
+
+#PIE
+Burrows_NBglm_2018 <- glm.nb(data = combined_data_full_2018,
+                        Post_Burrow_Count ~ 
+                          Density_Num *
+                          Pre_Pene_AVG +
+                          Site
+                        ,
+                        link = "log"
+                        )
+summary(Burrows_NBglm_2018)
+summary(Burrows_NBglm)
+
+#NAN
+# Initial Soil Strength and Crab Density to Final Burrow Density Interaction Heat Map
+visreg2d(Burrows_NBglm_2017, 
+         "Pre_Pene_AVG",
+         "Density_Num",
+         scale = "response", 
+         main = "Final Burrow Density 2017",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial Crab Density",
+         xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         )
+
+visreg(Burrows_NBglm_2017, 
+       "Density_Num", 
+       scale = "response", 
+       by = c("Pre_Pene_AVG"),
+       breaks = c(0, 10, 20, 30),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Crab Density",
+       main = "2017"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+visreg(Burrows_NBglm_2017, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = c("Density_Num"),
+       breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength",
+       main = "2017"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+visreg2d(Burrows_NBglm_2018, 
+         "Pre_Pene_AVG",
+         "Density_Num",
+         scale = "response", 
+         main = "Final Burrow Density 2018",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial Crab Density",
+         xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         )
+
+
+visreg(Burrows_NBglm_2018, 
+       "Density_Num", 
+       scale = "response", 
+       by = c("Pre_Pene_AVG"),
+       breaks = c(0, 10, 20, 30),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Crab Density",
+       main = "2018"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+visreg(Burrows_NBglm_2018, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = c("Density_Num"),
+       breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength",
+       main = "2018"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+
+visreg(Burrows_NBglm, 
+       "Site", 
+       scale = "response", 
+       by = c("Year_Fac"),
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Site"#,
+       #main = "2018"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+
+
+
+
+
+#OK, now let's look at the combined affect of burrows and initial soil strength on final soil strength
+visreg2d(Post_Pene_lm,
+         "Pre_Pene_AVG",
+         "Post_Burrow_Count",
+         scale = "response", 
+         main = "Final Soil Strength",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Final Burrow Count",
+         xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         )
+
+```
+
+
+
+
+# **PSEM Combined Ecosystem Models**
+
+## EF Model Combinations
+
+> 1) Soil Strength and Primary Production
+> 2) Soil Strength, Primary Production, and Decomposition
+> 3) Soil Strength, Primary Production, and Belowground Biomass (Belowground Production)
+> 4) Soil Strength, Primary Production, Decomposition, and Belowground Biomass (Belowground Production)
+
+There are the models generated by the psem package, also I created SEM models using DiagrammeR.  Below is a key
+for understanding what each model type components mean:
+
+## SEM Visualization Key
+
+>Squares = Nodes (variables/parameters)
+
+>Arrows = The direction that on variable influences the other
+
+>Solid Line = A Significant Interaction (p<0.5)
+
+>Dashed Line = A Non-Significant Interaction (p>0.5)
+
+## DiagrammeR Visualization Key
+
+**(Created because the PSEM plot got complicated, and this cleaned things up)**
+
+>Circle = Fully Exogenous (Predictor) Node (Variable)
+
+>Square = Endogenous (Response) Node, but can also be exogenous to another node.  Exhibits some endogeneity tho
+
+>Solid Thick Red Line = Significant Relationship (p<0.5)
+
+>Solid Thin Black Line = Non-Significant Relationship (p>0.5)
+
+*Most of the Non-Significant relationships have been removed for clarity, with only a few added for explanatory
+purposes*
+
+# **Model Output**
+
+## Soil and Production Models
+
+```{r Soil and Production Models, warning=FALSE, cache=TRUE, message=FALSE}
+# Piecewise (Local) SEM
+
+## Soil  Strength
+Post_Pene_combined_lm <- lm(data = combined_data_full, 
+                            Post_Pene_AVG ~ 
+                              Post_Burrow_Count + 
+                              Pre_Pene_AVG +
+                              Site +
+                              Year_Fac +
+                              Pre_Live_SD *
+                              Post_Live_SD
+                             )
+summary(Post_Pene_combined_lm)
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Year * Site))
+
+#Burrows
+Burrows_combined_NBglm <- glm.nb(data = combined_data_full,
+                                 Post_Burrow_Count ~ 
+                                   Density_Num *
+                                   Pre_Pene_AVG +
+                                   Year_Fac +
+                                   Site
+                                 ,
+                                 link = "log"
+                                 )
+summary(Burrows_combined_NBglm)
+
+#Initial Soil Strength
+Pre_Pene_combined_lm <- lm(data = combined_data_full, 
+                           Pre_Pene_AVG ~
+                             Site +
+                             Year_Fac
+                           )
+summary(Pre_Pene_combined_lm)
+
+#Spartina Biomass
+SB_Gamma_combined_glm <- glm(data = combined_data_full,
+                              Spartina_Biomass ~  
+                               Pre_Live_SD * 
+                               Post_Live_SD +
+                               Post_Burrow_Count *
+                               Pre_Pene_AVG +
+                               Density_Num +
+                               #Post_Live_SD * 
+                               #Post_Pene_AVG +
+                               Site +
+                               Year_Fac,
+                               family = Gamma(link = "log")
+                             )
+summary(SB_Gamma_combined_glm)
+
+#Final Shoot Density (SD)
+SD_combined_NBglm <- glm.nb(data = combined_data_full,
+                            Post_Live_SD ~
+                              Density_Num +
+                              Post_Burrow_Count +
+                              Pre_Live_SD +
+                              Pre_Pene_AVG +
+                              Site +
+                              Year_Fac,
+                            link = "log"
+                            )
+summary(SD_combined_NBglm)
+
+SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
+plot(SD_nb_res_combined)
+
+#Running the combined model
+combined_SEM <- psem(Post_Pene_combined_lm,
+                     Burrows_combined_NBglm,
+                     SB_Gamma_combined_glm,
+                     SD_combined_NBglm,
+                     Pre_Pene_combined_lm)
+
+summary(combined_SEM)
+
+ #plot(combined_SEM, show = "Estimate")
+
+```
+
+
+```{r Mussels}
+# Trying to see what happens when mussel density is included, 2018 only
+
+## Soil  Strength
+Post_Pene_combined_2018_lm <- lm(data = combined_data_full_2018, 
+                            Post_Pene_AVG ~ 
+                              Post_Burrow_Count + 
+                              Pre_Pene_AVG +
+                              Site +
+                              Post_Mussels +
+                              Pre_Live_SD *
+                              Post_Live_SD
+                             )
+summary(Post_Pene_combined_2018_lm)
+
+#Burrows
+Burrows_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
+                                 Post_Burrow_Count ~ 
+                                   Density_Num *
+                                   Pre_Pene_AVG +
+                                   Site +
+                                   Post_Mussels
+                                 ,
+                                 link = "log"
+                                 )
+summary(Burrows_combined_2018_NBglm)
+
+#Initial Soil Strength
+Pre_Pene_combined_2018_lm <- lm(data = combined_data_full_2018, 
+                           Pre_Pene_AVG ~
+                             Site 
+                           )
+summary(Pre_Pene_combined_2018_lm)
+
+#Spartina Biomass
+SB_Gamma_combined_2018_glm <- glm(data = combined_data_full_2018,
+                              Spartina_Biomass ~  
+                               Post_Burrow_Count +
+                               Pre_Live_SD * 
+                               Post_Live_SD +
+                               Pre_Pene_AVG +
+                               Density_Num +
+                               Post_Live_SD * 
+                               Post_Pene_AVG +
+                               Site +
+                               Post_Mussels,
+                               family = Gamma(link = "log")
+                             )
+summary(SB_Gamma_combined_2018_glm)
+
+#Final Shoot Density (SD)
+SD_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
+                            Post_Live_SD ~
+                              Post_Burrow_Count +
+                              Pre_Live_SD +
+                              Site +
+                              Post_Mussels,
+                            link = "log"
+                            )
+summary(SD_combined_2018_NBglm)
+
+SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
+plot(SD_nb_res_combined)
+
+#Final Mussel Count
+Mussels_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
+                                      Post_Mussels ~
+                                        Pre_Pene_AVG +
+                                        Pre_Live_SD +
+                                        Site,
+                                      link = "log"
+                                      )
+summary(Mussels_combined_2018_NBglm)
+
+#Running the combined model
+combined_SEM_2018 <- psem(Post_Pene_combined_2018_lm,
+                     Burrows_combined_2018_NBglm,
+                     SB_Gamma_combined_2018_glm,
+                     SD_combined_2018_NBglm,
+                     Pre_Pene_combined_2018_lm,
+                     Mussels_combined_2018_NBglm)
+
+summary(combined_SEM_2018)
+
+```
+
+```{r 2017 and 2018 separately}
+# 2017
+## Soil  Strength
+Post_Pene_combined_2017_lm_2 <- lm(data = combined_data_full_2017, 
+                            Post_Pene_AVG ~ 
+                              Post_Burrow_Count + 
+                              Pre_Pene_AVG +
+                              Site #+
+                              #Density_Num +
+                              #Post_Mussels +
+                              #Pre_Live_SD *
+                              #Post_Live_SD
+                             )
+summary(Post_Pene_combined_2017_lm_2)
+
+#Burrows
+Burrows_combined_2017_NBglm_2 <- glm.nb(data = combined_data_full_2017,
+                                 Post_Burrow_Count ~ 
+                                   Density_Num *
+                                   Pre_Pene_AVG +
+                                   Site #+
+                                   #Post_Mussels
+                                 ,
+                                 link = "log"
+                                 )
+summary(Burrows_combined_2017_NBglm_2)
+
+#Initial Soil Strength
+Pre_Pene_combined_2017_lm_2 <- lm(data = combined_data_full_2017, 
+                           Pre_Pene_AVG ~
+                             Site 
+                           )
+summary(Pre_Pene_combined_2017_lm_2)
+
+#Spartina Biomass
+Data_2017 <- filter(combined_data_full, Year %in% "2017")
+SB_Gamma_combined_2017_glm_2 <- glm(data = Data_2017,
+                              Spartina_Biomass ~  
+                               Post_Burrow_Count +
+                               Pre_Live_SD * 
+                               Post_Live_SD +
+                               Pre_Pene_AVG +
+                               Density_Num +
+                               Post_Live_SD * 
+                               Post_Pene_AVG +
+                               Site #+
+                               #Post_Mussels
+                              ,
+                               family = Gamma(link = "log")
+                             )
+summary(SB_Gamma_combined_2017_glm_2)
+
+#Final Shoot Density (SD)
+SD_combined_2017_NBglm_2 <- glm.nb(data = combined_data_full_2017,
+                            Post_Live_SD ~
+                              Post_Burrow_Count +
+                              Pre_Live_SD +
+                              Site #+
+                              #Post_Mussels
+                            ,
+                            link = "log"
+                            )
+summary(SD_combined_2017_NBglm_2)
+
+#SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
+#plot(SD_nb_res_combined)
+
+#Final Mussel Count
+#Mussels_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
+                                      #Post_Mussels ~
+                                        #Pre_Pene_AVG +
+                                        #Pre_Live_SD +
+                                        #Site,
+                                      #link = "log"
+                                      #)
+#summary(Mussels_combined_2018_NBglm)
+
+#Running the combined model
+combined_SEM_2017_2 <- psem(Post_Pene_combined_2017_lm_2,
+                     Burrows_combined_2017_NBglm_2,
+                     SB_Gamma_combined_2017_glm_2,
+                     SD_combined_2017_NBglm_2,
+                     Pre_Pene_combined_2017_lm_2#,
+                     #Mussels_combined_2018_NBglm
+                     )
+
+summary(combined_SEM_2017_2)
+
+# 2018
+## Soil  Strength
+Post_Pene_combined_2018_lm_2 <- lm(data = combined_data_full_2018, 
+                            Post_Pene_AVG ~ 
+                              Post_Burrow_Count + 
+                              Pre_Pene_AVG +
+                              Site# +
+                              #Density_Num +
+                              #Post_Mussels +
+                              #Pre_Live_SD *
+                              #Post_Live_SD
+                             )
+summary(Post_Pene_combined_2018_lm_2)
+
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Site))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Site + Year))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Site))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Year))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Site + Year))
+
+summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count + Site))
+summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count + Site + Pre_Pene_AVG))
+summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = combined_data_full_2017, Post_Pene_AVG ~ Post_Burrow_Count))
+
+summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count + Site))
+summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count + Site + Pre_Pene_AVG))
+summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = combined_data_full_2018, Post_Pene_AVG ~ Post_Burrow_Count))
+
+summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Year))
+summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG + Year))
+summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count))
+summary(lm(data = fidd_NAN, Post_Pene_AVG ~ Post_Burrow_Count + Year))
+summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count))
+summary(lm(data = fidd_PIE, Post_Pene_AVG ~ Post_Burrow_Count + Year))
+
+Post_Pene_combined_lm_2018 <- lm(data = combined_data_full_2018, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Pre_Pene_AVG +
+                                Pre_Live_SD *
+                                Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_2018)
+
+Post_Pene_combined_lm_2017 <- lm(data = combined_data_full_2017, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Pre_Pene_AVG +
+                                Pre_Live_SD *
+                                Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_2017)
+
+Post_Pene_combined_lm_Alt <- lm(data = Decomp_2018_3, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Depth +
+                                End_Mass_LB +
+                                Pre_Pene_AVG +
+                                Pre_Live_SD *
+                                Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_Alt)
+summary(Post_Pene_combined_lm_2)
+summary(Post_Pene_combined_lm)
+
+visreg(Post_Pene_combined_lm,
+       "Post_Burrow_Count",
+       scale = "response",
+       by = "Year_Fac")
+
+visreg(Post_Pene_combined_lm,
+       "Post_Burrow_Count",
+       scale = "response",
+       by = "Site")
+
+visreg(Post_Pene_combined_lm_2018,
+       "Post_Burrow_Count",
+       scale = "response",
+       by = "Site")
+
+visreg(Post_Pene_combined_lm_2017,
+       "Post_Burrow_Count",
+       scale = "response",
+       by = "Site",
+       )
+
+visreg(Burrows_NBglm, 
+       "Pre_Pene_AVG", 
+       scale = "response", 
+       by = "Density_Num",
+       breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Crab Burrow Density",
+       xlab = "Initial Soil Strength"
+       )
+
+ggplot(data = fidd_PIE, aes(x = Post_Burrow_Count,
+                            y = Post_Pene_AVG,
+                            color = Year)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab(label = "Final Soil Strength PIE")
+
+ggplot(data = fidd_NAN, aes(x = Post_Burrow_Count,
+                            y = Post_Pene_AVG,
+                            color = Year)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab(label = "Final Soil Strength NAN")
+
+ggplot(data = combined_data_full, aes(x = Post_Burrow_Count,
+                                      y = Post_Pene_AVG,
+                                      color = Location,
+                                      shape = Year)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab(label = "Final Soil Strength NAN")
+
+NAN_2017 <- combined_data_full %>%
+  filter(Location %in% "NAN") %>%
+  filter(Year %in% "2017")
+
+NAN_2018 <- combined_data_full %>%
+  filter(Location %in% "NAN") %>%
+  filter(Year %in% "2018")
+
+PIE_2017 <- combined_data_full %>%
+  filter(Location %in% "PIE") %>%
+  filter(Year %in% "2017")
+
+PIE_2018 <- combined_data_full %>%
+  filter(Location %in% "PIE") %>%
+  filter(Year %in% "2018")
+
+summary(lm(data = NAN_2017, Post_Pene_AVG ~ Post_Burrow_Count))
+summary(lm(data = NAN_2018, Post_Pene_AVG ~ Post_Burrow_Count))
+summary(lm(data = PIE_2017, Post_Pene_AVG ~ Post_Burrow_Count))
+summary(lm(data = PIE_2018, Post_Pene_AVG ~ Post_Burrow_Count))
+
+summary(lm(data = NAN_2017, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = NAN_2018, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = PIE_2017, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+summary(lm(data = PIE_2018, Post_Pene_AVG ~ Post_Burrow_Count + Pre_Pene_AVG))
+plot(Post_Pene_AVG ~ Post_Burrow_Count, data = NAN_2018)
+
+summary(lm(data = NAN_2017, Post_Pene_AVG ~ Pre_Pene_AVG))
+summary(lm(data = NAN_2018, Post_Pene_AVG ~ Pre_Pene_AVG))
+summary(lm(data = PIE_2017, Post_Pene_AVG ~ Pre_Pene_AVG))
+summary(lm(data = PIE_2018, Post_Pene_AVG ~ Pre_Pene_AVG))
+
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG + Site))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG + Year))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG + Site + Year))
+summary(lm(data = combined_data_full, Post_Pene_AVG ~ Pre_Pene_AVG * (Site + Year)))
+summary(lm(data = combined_data_full, Pre_Pene_AVG ~ Site + Year))
+summary(lm(data = combined_data_full, Pre_Pene_AVG ~ Site * Year))
+
+model1 <- lm(data = combined_data_full, Post_Pene_AVG ~ Post_Burrow_Count + Site + Year_Fac)
+summary(model1)
+cor(combined_data_full, method = c("spearman"))
+
+d <- data.frame(x1=rnorm(10),
+                 x2=rnorm(10),
+                 x3=rnorm(10))
+
+e <- data.frame(SoilStrength = combined_data_full$Post_Pene_AVG,
+                Burrows = combined_data_full$Post_Burrow_Count,
+                Year = combined_data_full$Year_Fac,
+                Site = combined_data_full$Site)
+cor(e) # get correlations (returns matrix)
+vif(model1)
+vif(lm(Post_Pene_AVG ~ Post_Burrow_Count + Location + Year, data = combined_data_full))
+plot(model1, which=c(1,2,5))
+residualPlots(model1, test=FALSE)
+crPlots(model1, smooth=FALSE)
+visreg(model1)
+
+k_med_soil <- data.frame(Post_Pene_AVG = median(combined_data_full$Post_Pene_AVG),
+                         Post_Burrow_Count = seq(0,50, length.out = 100),
+                         Year_Fac = c(0,1),
+                         Site = c(0,1))
+k_med_soil <- cbind(k_med_soil, predict(model1, 
+                                        newdata = k_med_soil,
+                                        interval="confidence"))
+  
+ggplot() +
+  geom_point(data=combined_data_full, mapping = aes(x=Post_Burrow_Count, y = Post_Pene_AVG,
+                                                    color = Site)) +
+  geom_line(data = k_med_soil, mapping=aes(x=Post_Burrow_Count, y = Post_Pene_AVG,
+                                           color = Site), color="blue") +
+  geom_ribbon(data = k_med_soil, mapping = aes(x=Post_Burrow_Count, 
+                                                  ymin = lwr,
+                                                  ymax = upr),
+              fill="lightgrey", alpha=0.5)
+
+plot(PIE_2018, color = "Navy", main = "Matrix Scatterplot")
+
+
+#Burrows
+Burrows_combined_2018_NBglm_2 <- glm.nb(data = combined_data_full_2018,
+                                 Post_Burrow_Count ~ 
+                                   Density_Num *
+                                   Pre_Pene_AVG +
+                                   Site #+
+                                   #Post_Mussels
+                                 ,
+                                 link = "log"
+                                 )
+summary(Burrows_combined_2018_NBglm_2)
+
+#Initial Soil Strength
+Pre_Pene_combined_2018_lm_2 <- lm(data = combined_data_full_2018, 
+                           Pre_Pene_AVG ~
+                             Site 
+                           )
+summary(Pre_Pene_combined_2018_lm_2)
+
+#Spartina Biomass
+SB_Gamma_combined_2018_glm_2 <- glm(data = combined_data_full_2018,
+                              Spartina_Biomass ~  
+                               Post_Burrow_Count +
+                               Pre_Live_SD * 
+                               Post_Live_SD +
+                               Pre_Pene_AVG +
+                               Density_Num +
+                               Post_Live_SD * 
+                               Post_Pene_AVG +
+                               Site #+
+                               #Post_Mussels
+                              ,
+                               family = Gamma(link = "log")
+                             )
+summary(SB_Gamma_combined_2018_glm_2)
+
+#Final Shoot Density (SD)
+SD_combined_2018_NBglm_2 <- glm.nb(data = combined_data_full_2018,
+                            Post_Live_SD ~
+                              Post_Burrow_Count +
+                              Pre_Live_SD +
+                              Site #+
+                              #Post_Mussels
+                            ,
+                            link = "log"
+                            )
+summary(SD_combined_2018_NBglm_2)
+
+SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)
+plot(SD_nb_res_combined)
+
+#Final Mussel Count
+#Mussels_combined_2018_NBglm <- glm.nb(data = combined_data_full_2018,
+                                      #Post_Mussels ~
+                                        #Pre_Pene_AVG +
+                                        #Pre_Live_SD +
+                                        #Site,
+                                      #link = "log"
+                                      #)
+#summary(Mussels_combined_2018_NBglm)
+
+#Running the combined model
+combined_SEM_2018_2 <- psem(Post_Pene_combined_2018_lm_2,
+                     Burrows_combined_2018_NBglm_2,
+                     SB_Gamma_combined_2018_glm_2,
+                     SD_combined_2018_NBglm_2,
+                     Pre_Pene_combined_2018_lm_2#,
+                     #Mussels_combined_2018_NBglm
+                     )
+
+summary(combined_SEM_2018_2)
+
+```
+
+
+## Soil and Production DAGs
+
+
+```{r DiagrammeR Plots, warning=FALSE, cache=TRUE, message=FALSE}
+# DiagrammeR Plots
+
+## Including Site and Year
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      Site [label = '@@5']
+      Year [label = '@@6']
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      Final_SS [label = '@@7']
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      
+      # Primary Production
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            color = forestgreen,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Pre_Live_SD [label = '@@8']
+      Spartina_Biomass [label = '@@9']
+      Post_Live_SD [label = '@@10']
+      Pre_post_Intrctn [label = '@@11', height = 0.9]
+      
+      # Soil Shoots Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2.2,
+            height = 0.9,
+            color = CadetBlue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      SoilShoots_Intrctn [label = '@@12']
+  
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density
+  Initial_SS->Spartina_Biomass [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
+  Initial_SS->Post_Live_SD 
+  
+  #Primary Production Exogenous Variables
+  edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
+  Pre_Live_SD -> Final_SS
+  Pre_Live_SD -> Spartina_Biomass 
+  Pre_Live_SD -> Post_Live_SD 
+  Pre_post_Intrctn -> Spartina_Biomass
+  Pre_post_Intrctn -> Final_SS
+  Burrow_Density -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Final_SS -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Burrow_Density -> Post_Live_SD [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Site->Burrow_Density
+  Year->Burrow_Density
+  Burrow_Density->Final_SS [color = steelblue]
+  Site->Initial_SS
+  Year->Initial_SS
+  Site->Final_SS
+  Year->Final_SS
+  Initial_SS->Final_SS
+  Year -> Post_Live_SD
+  Post_Live_SD->Spartina_Biomass [color = forestgreen]
+  Site -> Spartina_Biomass
+  
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  
+  edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 4]
+  SoilShoots_Intrctn->Spartina_Biomass
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Site'
+  [6]: 'Year'
+  [7]: 'Final Soil Strength'
+  [8]: 'Initial Shoot Density'
+  [9]: 'Spartina Biomass'
+  [10]: 'Final Shoot Density'
+  [11]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
+  [12]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
+      
+"
+) 
+
+## Omitting Site and Year
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      Final_SS [label = '@@5']
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      
+      # Primary Production
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            color = forestgreen,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Pre_Live_SD [label = '@@6']
+      Spartina_Biomass [label = '@@7']
+      Post_Live_SD [label = '@@8']
+      Pre_post_Intrctn [label = '@@9', height = 0.9, width = 2.2]
+      
+      # Soil Shoots Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2.1,
+            height = 0.9,
+            color = CadetBlue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      SoilShoots_Intrctn [label = '@@10']
+  
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density
+  Initial_SS->Spartina_Biomass [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
+  Initial_SS->Post_Live_SD 
+
+  
+  #Primary Production Exogenous Variables
+  edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
+  Pre_Live_SD -> Final_SS
+  Pre_Live_SD -> Spartina_Biomass 
+  Pre_Live_SD -> Post_Live_SD 
+  Pre_post_Intrctn -> Spartina_Biomass
+  Pre_post_Intrctn -> Final_SS
+  Burrow_Density -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Final_SS -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Burrow_Density -> Post_Live_SD [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Burrow_Density->Final_SS [color = steelblue]
+  Initial_SS->Final_SS
+  Post_Live_SD->Spartina_Biomass [color = forestgreen]
+  Post_Live_SD->Final_SS [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Crab_Density->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  #Crab Density and Soil Strength Interaction
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  
+  #Soil Strength and Final Shoot Density Interaction
+  edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 4]
+  SoilShoots_Intrctn->Spartina_Biomass
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Final Soil Strength'
+  [6]: 'Initial Shoot Density'
+  [7]: 'Spartina Biomass'
+  [8]: 'Final Shoot Density'
+  [9]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
+  [10]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
+      
+"
+) 
+
+
+#grViz("
+  #digraph test {
+   # graph [fontsize = 10]
+
+   # node [shape = box]
+   # A [label = 'Foo\\lBar\\l']
+   # B [label = 'Bar\\rFoo\\r']
+
+   # A -> B
+ # }
+#")
+
+#plot(combined_SEM, show = "unstd")
+#coefs(combined_SEM, intercepts = TRUE)
+#rsquared(combined_SEM)
+```
+
+## Soil and Production Visreg
+
+```{r Visreg Interaction Plots, warning=FALSE, cache=TRUE, message=FALSE}
+
+visreg2d(Post_Pene_combined_lm, 
+         "Pre_Live_SD",
+         "Post_Live_SD",
+         scale = "response", 
+         main = "Final Soil Strength",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial S. alterniflora Density",
+         xlab = "Final S. alterniflora Density"#,
+         #plot.type = "rgl"
+         )
+
+visreg2d(SB_Gamma_combined_glm, 
+         "Pre_Live_SD",
+         "Post_Live_SD",
+         scale = "response", 
+         main = "Spartina alterniflora Biomass",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Initial S. alterniflora Density",
+         xlab = "Final S. alterniflora Density"#,
+         #plot.type = "rgl"
+         )
+
+visreg2d(SB_Gamma_combined_glm, 
+         "Post_Pene_AVG",
+         "Post_Live_SD",
+         scale = "response", 
+         main = "Spartina alterniflora Biomass",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Final S. alterniflora Density",
+         xlab = "Final Soil Strength"#,
+         #plot.type = "rgl"
+         )
+
+#visreg2d(Burrows_combined_NBglm, 
+         #x = "Pre_Pene_AVG",
+         #y = "Pre_Live_SD",
+         #scale = "response", 
+         #main = "Burrow Density",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         #ylab = "Initial S. alterniflora Density",
+         #xlab = "Initial Soil Strength"#,
+         #plot.type = "rgl"
+         #)
+
+visreg(SD_combined_2018_NBglm,
+       "Post_Mussels",
+       by = "Site",
+       scale = "response")
+
+visreg(Burrows_combined_2018_NBglm,
+       "Post_Mussels",
+       by = "Site",
+       scale = "response")
+
+
+visreg(SB_Gamma_combined_2018_glm,
+       "Post_Mussels",
+       by = "Site",
+       scale = "response")
+
+visreg(Post_Pene_combined_lm,
+       "Post_Live_SD",
+       by = "Site",
+       scale = "response")
+
+visreg(SD_combined_NBglm,
+       "Post_Pene_AVG",
+       by = "Site",
+       scale = "response")
+
+#Get the SE
+SD_Site_SE <- summarySE(combined_data_full, measurevar = "Post_Live_SD", 
+                                  groupvars = c("Location"))
+
+#Plot it!
+ggplot(data = SD_Site_SE, aes(x = Location, 
+                              y = Post_Live_SD,
+                              fill = Location)) +
+  geom_bar(position = position_dodge(), stat = "identity", 
+           width = 0.50) +
+  expand_limits(y = c(0, 1)) +
+  geom_errorbar(aes(ymin = Post_Live_SD - se, ymax = Post_Live_SD + se),
+                width = .1,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Final Shoot Density") +
+  xlab("Location") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Bar
+
+#Get the SE
+SB_Site_SE <- summarySE(combined_data_full, measurevar = "Spartina_Biomass", 
+                                  groupvars = c("Location"))
+
+#Plot it!
+ggplot(data = SB_Site_SE, aes(x = Location, 
+                              y = Spartina_Biomass,
+                              fill = Location)) +
+  geom_bar(position = position_dodge(), stat = "identity", 
+           width = 0.50) +
+  expand_limits(y = c(0, 1)) +
+  geom_errorbar(aes(ymin = Spartina_Biomass - se, ymax = Spartina_Biomass + se),
+                width = .1,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Spartina Biomass") +
+  xlab("Location") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Bar
+
+summary(lm(Post_Live_SD ~ Location, data = combined_data_full))
+summary(lm(Pre_Live_SD ~ Location, data = combined_data_full))
+summary(lm(Spartina_Biomass ~ Location, data = combined_data_full))
+
+#Get the SE
+Pre_SD_Site_SE <- summarySE(combined_data_full, measurevar = "Pre_Live_SD", 
+                                  groupvars = c("Location"))
+
+#Plot it!
+ggplot(data = Pre_SD_Site_SE, aes(x = Location, 
+                              y = Pre_Live_SD,
+                              fill = Location)) +
+  geom_bar(position = position_dodge(), stat = "identity", 
+           width = 0.50) +
+  expand_limits(y = c(0, 1)) +
+  geom_errorbar(aes(ymin = Pre_Live_SD - se, ymax = Pre_Live_SD + se),
+                width = .1,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Initial Shoot Density") +
+  xlab("Location") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Bar
+
+ggplot(data = combined_data_full, aes(x = Pre_Live_SD,
+                                      y = Post_Live_SD,
+                                      color = Location)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ylab("Final Shoot Density") +
+  xlab("Initial Shoot Density") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Line
+
+summary(lm(Post_Live_SD ~ Pre_Live_SD + Location, data = combined_data_full))
+
+#Get the SE
+SS_Site_SE <- summarySE(combined_data_full, measurevar = "Post_Pene_AVG", 
+                                  groupvars = c("Location"))
+
+#Plot it!
+ggplot(data = SS_Site_SE, aes(x = Location, 
+                              y = Post_Pene_AVG,
+                              fill = Location)) +
+  geom_bar(position = position_dodge(), stat = "identity", 
+           width = 0.50) +
+  expand_limits(y = c(0, 1)) +
+  geom_errorbar(aes(ymin = Post_Pene_AVG - se, ymax = Post_Pene_AVG + se),
+                width = .1,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Final Soil Strength") +
+  xlab("Location") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Bar
+
+#Get the SE
+SS_Initial_Site_SE <- summarySE(combined_data_full, measurevar = "Pre_Pene_AVG", 
+                                  groupvars = c("Location"))
+
+#Plot it!
+ggplot(data = SS_Initial_Site_SE, aes(x = Location, 
+                                      y = Pre_Pene_AVG,
+                                      fill = Location)) +
+  geom_bar(position = position_dodge(), stat = "identity", 
+           width = 0.50) +
+  expand_limits(y = c(0, 1)) +
+  geom_errorbar(aes(ymin = Pre_Pene_AVG - se, ymax = Pre_Pene_AVG + se),
+                width = .1,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Initial Soil Strength") +
+  xlab("Location") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Bar
+
+
+
+Burrows_Site_SE <- summarySE(combined_data_full, measurevar = "Post_Burrow_Count", 
+                                  groupvars = c("Density_NN"))
+
+#Plot it!
+ggplot(data = Burrows_Site_SE, aes(x = Density_NN, 
+                              y = Post_Burrow_Count,
+                              fill = Density_NN)) +
+  geom_bar(position = position_dodge(), stat = "identity", 
+           width = 0.50) +
+  expand_limits(y = c(0, 1)) +
+  geom_errorbar(aes(ymin = Post_Burrow_Count - se, ymax = Post_Burrow_Count + se),
+                width = .1,                    # Width of the error bars
+                position=position_dodge(.9)) +
+  ylab("Burrow Density") +
+  xlab("Initial Crab Density") +
+  theme_bw() +
+  My_Font_Sizes
+
+#Compare Initial Soil Strength to Burrow Density
+ggplot(data = combined_data_full, 
+       mapping = aes(x = Pre_Pene_AVG, 
+                     y = Post_Burrow_Count, 
+                     color = Location
+                     )) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  ylab("Number of Burrows per Plot") +
+  xlab("Initial Soil Strength") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Line
+
+ggplot(data = combined_data_full, 
+       mapping = aes(x = Post_Burrow_Count, 
+                     y = Post_Pene_AVG, 
+                     color = Location
+                     )) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              #se = FALSE
+              ) +
+  xlab("Number of Burrows per Plot") +
+  ylab("Final Soil Strength") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Line
+
+summary(lm(Post_Pene_AVG ~ Post_Burrow_Count + Location, data = combined_data_full))
+
+ggplot(data = combined_data_full, 
+       mapping = aes(y = Post_Burrow_Count,
+                     x = Post_Pene_AVG, 
+                     color = Location
+                     )) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  ylab("Number of Burrows per Plot") +
+  xlab("Final Soil Strength") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Line
+
+#Compare Initial Soil Strength to Burrow Density
+ggplot(data = combined_data_full, 
+       mapping = aes(x = Pre_Pene_AVG, 
+                     y = Post_Burrow_Count, 
+                     color = Density_NN,
+                     shape = Location
+                     )) +
+  geom_point() +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  ylab("Number of Burrows per Plot") +
+  xlab("Initial Soil Strength") +
+  theme_bw() +
+  My_Font_Sizes #+
+  #Location_Colors_Line
+
+#Compare Initial Crab Density to Burrow Density
+ggplot(data = combined_data_full, 
+       mapping = aes(x = Density_Num, 
+                     y = Post_Burrow_Count, 
+                     color = Location
+                     )) +
+  geom_point() +
+  geom_smooth(method = "loess") +
+  scale_x_continuous(breaks = c(0, 4, 8, 12, 16, 20)) +
+  ylab("Number of Burrows per Plot") +
+  xlab("Initial Crab Density") +
+  theme_bw() +
+  My_Font_Sizes +
+  Location_Colors_Line
+
+```
+
+
+## Decomposition Models
+
+
+```{r Decomposition Models (2018 Only), warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE}
+#Building the Models
+
+#Soil Strength
+Post_Pene_combined_lm_2 <- lm(data = Decomp_2018_3, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Pre_Pene_AVG +
+                                Pre_Live_SD *
+                                Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_2)
+
+#Wider Data
+Post_Pene_combined_lm_Wider <- lm(data = Decomp_2018_Wider_2, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Pre_Pene_AVG +
+                                Pre_Live_SD *
+                                Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_Wider)
+
+#Burrows
+Burrows_combined_NBglm_2 <- glm.nb(data = Decomp_2018_3, 
+                            Post_Burrow_Count ~ 
+                              Density_Num *
+                              Pre_Pene_AVG +
+                              Site #+
+                              #Pre_Live_SD
+                            ,
+                            link = "log"
+                            )
+summary(Burrows_combined_NBglm_2)
+summary(glm.nb(data = combined_data_full_2017, Post_Burrow_Count ~ Density_Num * Pre_Pene_AVG + Site))
+summary(glm.nb(data = combined_data_full, Post_Burrow_Count ~ Density_Num * Pre_Pene_AVG + Site + Year))
+
+#Initial Soil Strength
+Pre_Pene_combined_lm_2 <- lm(data = Decomp_2018_3, 
+                           Pre_Pene_AVG ~
+                             Site
+                           )
+summary(Pre_Pene_combined_lm_2)
+
+#Spartina Biomass
+SB_Gamma_glm_2 <- glm(data = Decomp_2018_3,
+                      Spartina_Biomass ~
+                        Post_Burrow_Count +
+                        Pre_Live_SD *
+                        Post_Live_SD +
+                        Pre_Pene_AVG +
+                        Density_Num + 
+                        Post_Live_SD *
+                        Post_Pene_AVG +
+                        Site,
+                      family = Gamma(link = "log")
+                      )
+summary(SB_Gamma_glm_2)
+
+#Decomposition
+Decomp_lm_2 <- lm(data = Decomp_2018_3,
+                End_Mass_LB ~
+                  Post_Burrow_Count *
+                  Depth +
+                  Pre_Pene_AVG +
+                  Site
+               )
+summary(Decomp_lm_2)
+
+#Final Spartina Density
+SD_combined_NBglm_2 <- glm.nb(data = Decomp_2018_3,
+                            Post_Live_SD ~
+                              Post_Burrow_Count +
+                              Pre_Live_SD +
+                              Site +
+                              Pre_Pene_AVG,
+                            link = "log"
+                            )
+summary(SD_combined_NBglm_2)
+
+#The combined SEM with Decomp
+combined_SEM_2 <- psem(Post_Pene_combined_lm_2,
+                       Pre_Pene_combined_lm_2,
+                       Burrows_combined_NBglm_2,
+                       SB_Gamma_glm_2,
+                       Decomp_lm_2,
+                       SD_combined_NBglm_2
+                       )
+summary(combined_SEM_2)
+summary(combined_SEM)
+
+```
+
+
+## Decomposition DAGs
+
+
+```{r Decomposition DAGs, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE}
+## Piecewise SEM Decomposition DAG
+plot(combined_SEM_2, show = "Estimate")
+
+## DiagrammeR Decomposition DAGs
+### With Site
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      Site [label = '@@5']
+      Depth [label = '@@12']
+      Burrow_Depth_Intrctn [label = '@@13']
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      Final_SS [label = '@@6']
+      Depth [label = '@@12', color = SaddleBrown]
+      Burrow_Depth_Intrctn [label = '@@13', color = SaddleBrown]
+      End_Mass_LB [label = '@@14', color = SaddleBrown]
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      
+      # Primary Production
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            color = forestgreen,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Pre_Live_SD [label = '@@7']
+      Spartina_Biomass [label = '@@8']
+      Post_Live_SD [label = '@@9']
+      Pre_post_Intrctn [label = '@@10', height = 0.9, width = 2.3]
+      
+      # Soil Shoots Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2.2,
+            height = 0.9,
+            color = CadetBlue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      SoilShoots_Intrctn [label = '@@11']
+  
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density
+  Initial_SS->Spartina_Biomass
+  
+  #Primary Production Exogenous Variables
+  edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
+  Pre_Live_SD -> Final_SS
+  Pre_Live_SD -> Spartina_Biomass 
+  Pre_Live_SD -> Post_Live_SD 
+  Pre_post_Intrctn -> Spartina_Biomass
+  Pre_post_Intrctn -> Final_SS
+  Burrow_Density -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Final_SS -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Burrow_Density -> Post_Live_SD [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS -> End_Mass_LB [color = SaddleBrown] #was dimgrey
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Site->Burrow_Density
+  Burrow_Density->Final_SS [color = steelblue]
+  Site->Initial_SS
+  Site->Final_SS
+  Initial_SS->Final_SS
+  Post_Live_SD->Spartina_Biomass [color = forestgreen]
+  Site -> Spartina_Biomass
+  Site->Post_Live_SD [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Depth -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown]
+  Burrow_Density -> End_Mass_LB [color = SaddleBrown]
+  
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  
+  edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 4]
+  SoilShoots_Intrctn->Spartina_Biomass
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Site'
+  [6]: 'Final Soil Strength'
+  [7]: 'Initial Shoot Density'
+  [8]: 'Spartina Biomass'
+  [9]: 'Final Shoot Density'
+  [10]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
+  [11]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
+  [12]: 'Depth'
+  [13]: 'Burrow Density and\\nDepth Interaction\\n'
+  [14]: 'Final Litterbag Mass'
+      
+"
+)  
+
+### Without Site
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      Depth [label = '@@11', color = SaddleBrown]
+      Burrow_Depth_Intrctn [label = '@@12', color = SaddleBrown]
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      Final_SS [label = '@@5']
+      End_Mass_LB [label = '@@13', color = SaddleBrown]
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      
+      # Primary Production
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            color = forestgreen,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Pre_Live_SD [label = '@@6']
+      Spartina_Biomass [label = '@@7']
+      Post_Live_SD [label = '@@8']
+      Pre_post_Intrctn [label = '@@9', height = 0.9, width = 2.3]
+      
+      # Soil Shoots Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2.2,
+            height = 0.9,
+            color = CadetBlue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      SoilShoots_Intrctn [label = '@@10']
+  
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density
+  Initial_SS->Spartina_Biomass
+  
+  #Primary Production Exogenous Variables
+  edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
+  Pre_Live_SD -> Final_SS
+  Pre_Live_SD -> Spartina_Biomass 
+  Pre_Live_SD -> Post_Live_SD 
+  Pre_post_Intrctn -> Spartina_Biomass
+  Pre_post_Intrctn -> Final_SS
+  Burrow_Density -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Final_SS -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Burrow_Density -> Post_Live_SD [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS -> End_Mass_LB [color = SaddleBrown] #Was DimGrey
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Burrow_Density->Final_SS [color = steelblue]
+  Initial_SS->Final_SS
+  Post_Live_SD->Spartina_Biomass [color = forestgreen]
+  Depth -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown]
+  Burrow_Density -> End_Mass_LB [color = SaddleBrown]
+  
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  
+  edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 4]
+  SoilShoots_Intrctn->Spartina_Biomass
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Final Soil Strength'
+  [6]: 'Initial Shoot Density'
+  [7]: 'Spartina Biomass'
+  [8]: 'Final Shoot Density'
+  [9]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
+  [10]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
+  [11]: 'Depth'
+  [12]: 'Burrow Density and\\nDepth Interaction\\n'
+  [13]: 'Final Litterbag Mass'
+      
+"
+)  
+
+
+
+```
+
+
+## Decomposition Visreg
+
+
+```{r Decomposition Visreg}
+visreg::visreg2d(Decomp_lm_2,
+                 "Depth",
+                 "Post_Burrow_Count",
+                 #scale = "response", 
+                 main = "Decomposition Rate",
+                 #by = "Density_Num",
+                 #breaks = c(0, 4, 8, 12, 16, 20),
+                 ylab = "Final Burrow Density",
+                 xlab = "Initial Depth"#,
+                 #plot.type = "rgl"
+                 )
+
+visreg::visreg2d(Decomp_lm_2, 
+         "Post_Burrow_Count",
+         "Depth",
+         #scale = "response", 
+         #main = "Decomposition Rate",
+         #by = "Density_Num",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         ylab = "Final Burrow Density",
+         xlab = "Initial Depth",
+         plot.type = "rgl"
+         )
+
+visreg::visreg(Decomp_lm_2, 
+       "Post_Burrow_Count", 
+       #scale = "response", 
+       by = c("Depth", "Site"),
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       ylab = "Decomposition Rate",
+       xlab = "Final Burrow Density"
+       )
+
+
+```
+
+
+## New Decomposition Models
+
+
+```{r New Decomposition Models (2018 Only), warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE}
+#Building the Models
+
+#Soil Strength
+Post_Pene_combined_lm_3 <- lm(data = Decomp_2018_3, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Pre_Pene_AVG #+
+                                #Pre_Live_SD *
+                                #Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_3)
+
+#Wider Data
+Post_Pene_combined_lm_Wider_2 <- lm(data = Decomp_2018_Wider_2, 
+                              Post_Pene_AVG ~ 
+                                Site +
+                                Post_Burrow_Count + 
+                                Pre_Pene_AVG +
+                                Pre_Live_SD *
+                                Post_Live_SD
+                              )
+summary(Post_Pene_combined_lm_Wider_2)
+
+#Burrows
+Burrows_combined_NBglm_3 <- glm.nb(data = Decomp_2018_3, 
+                            Post_Burrow_Count ~ 
+                              Density_Num *
+                              Pre_Pene_AVG +
+                              Site #+
+                              #Pre_Live_SD
+                            ,
+                            link = "log"
+                            )
+summary(Burrows_combined_NBglm_3)
+summary(glm.nb(data = combined_data_full_2017, Post_Burrow_Count ~ Density_Num * Pre_Pene_AVG + Site))
+summary(glm.nb(data = combined_data_full, Post_Burrow_Count ~ Density_Num * Pre_Pene_AVG + Site + Year))
+
+#Initial Soil Strength
+Pre_Pene_combined_lm_3 <- lm(data = Decomp_2018_3, 
+                           Pre_Pene_AVG ~
+                             Site
+                           )
+summary(Pre_Pene_combined_lm_3)
+
+#Spartina Biomass
+SB_Gamma_glm_3 <- glm(data = Decomp_2018_3,
+                      Spartina_Biomass ~
+                        Post_Burrow_Count +
+                        Pre_Live_SD *
+                        Post_Live_SD +
+                        Pre_Pene_AVG +
+                        Density_Num + 
+                        Post_Live_SD *
+                        Post_Pene_AVG +
+                        Site,
+                      family = Gamma(link = "log")
+                      )
+summary(SB_Gamma_glm_3)
+
+#Decomposition
+Decomp_lm_3 <- lm(data = Decomp_2018_3,
+                End_Mass_LB ~
+                  Post_Burrow_Count *
+                  Depth +
+                  Pre_Pene_AVG +
+                  Site
+               )
+summary(Decomp_lm_3)
+
+#Final Spartina Density
+SD_combined_NBglm_3 <- glm.nb(data = Decomp_2018_3,
+                            Post_Live_SD ~
+                              Post_Burrow_Count +
+                              Pre_Live_SD +
+                              Site +
+                              Pre_Pene_AVG,
+                            link = "log"
+                            )
+summary(SD_combined_NBglm_3)
+
+#The combined SEM with Decomp
+combined_SEM_3 <- psem(#Post_Pene_combined_lm_3,
+                       Pre_Pene_combined_lm_3,
+                       Burrows_combined_NBglm_3,
+                       #SB_Gamma_glm_3,
+                       Decomp_lm_3#,
+                       #SD_combined_NBglm_3
+                       )
+summary(combined_SEM_3)
+summary(combined_SEM)
+plot(SS_Model, show = "STD")
+plot(combined_SEM_3, show = "STD")
+
+```
+
+
+## New Decomposition DAGs
+
+
+```{r New Decomposition DAGs, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE}
+## Piecewise SEM Decomposition DAG
+plot(combined_SEM_3, show = "Estimate")
+
+## DiagrammeR Decomposition DAGs
+### With Site
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Site [label = '@@5']
+      Depth [label = '@@6', color = SaddleBrown]
+      Burrow_Depth_Intrctn [label = '@@7', color = SaddleBrown]
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      End_Mass_LB [label = '@@8', color = SaddleBrown]
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      Crab_Density [label = '@@1']
+      
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Site->Burrow_Density
+  Site->Initial_SS
+  Site -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Depth -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS -> End_Mass_LB
+  Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown]
+  Burrow_Density -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Site'
+  [6]: 'Depth'
+  [7]: 'Burrow Density and\\nDepth Interaction\\n'
+  [8]: 'Final Litterbag Mass'
+      
+"
+)  
+
+### Without Site
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [overlap = false,
+             fontsize = 14]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Helvetica,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Depth [label = '@@5', color = SaddleBrown]
+      Burrow_Depth_Intrctn [label = '@@6', color = SaddleBrown]
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      End_Mass_LB [label = '@@7', color = SaddleBrown]
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      Crab_Density [label = '@@1']
+      
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
+  Depth -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS -> End_Mass_LB
+  Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown]
+  Burrow_Density -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  CrabSoil_Intrctn->Burrow_Density
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Depth'
+  [6]: 'Burrow Density and\\nDepth Interaction\\n'
+  [7]: 'Final Litterbag Mass'
+      
+"
+)  
+
+
+```
+
+## New Decomp Visreg Plots
+
+```{r New Decomp Visreg Plots}
+visreg2d(Decomp_lm_3, 
+         "Depth",
+         "Post_Burrow_Count",
+         scale = "response", 
+         main = "Decomposition Rate",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         xlab = "Depth",
+         ylab = "Burrow Density"
+         )
+
+visreg(Decomp_lm_3, 
+       "Post_Burrow_Count", 
+       scale = "response", 
+       by = c("Depth"),
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       xlab = "Burrow Density",
+       ylab = "Litter Bag Mass"#,
+       #main = "2018"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+
+visreg(Decomp_lm_3, 
+       "Depth", 
+       scale = "response", 
+       by = c("Post_Burrow_Count"),
+       breaks = c(0, 10, 20, 30),
+       layout = c(4,1),
+       xlab = "Depth",
+       ylab = "Litter Bag Mass"
+       #main = "2018"
+       #gg = TRUE
+       ) #+
+  #theme_bw() #+
+  #aes(color = "Site")
+
+
+
+```
+
+# **Error Distributions**
+
+#### Tests for Normality and Non-Normality for Each Model Above
+
+```{r Checking Residuals and Error Distributions, warning=FALSE, cache=TRUE, message=FALSE, echo=FALSE}
+#### Soil Strength ####
+SS_Resid_2 <- combined_data_full %>%
+  add_residuals(Post_Pene_lm)
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(Post_Pene_AVG, resid, data = SS_Resid_2) +
+  stat_smooth()
+
+#What about fitted vs residuals
+SS_Resid_2 <- SS_Resid_2 %>%
+  add_predictions(Post_Pene_lm)
+
+#Plot it!
+qplot(pred, resid, data = SS_Resid_2) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(SS_Resid_2$resid)
+
+#Plot the spread of the residuals
+ggplot(data = SS_Resid_2, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(SS_Resid_2$resid)
+
+#Finally, a histogram showing the spread of data
+hist(combined_data_full$Post_Pene_AVG)
+
+#Looks pretty normal to me, let's move on
+
+
+#### Final Burrow Counts ####
+## Burrow Counts to be Used for Soil Strength
+Burrows_Resid_SS <- combined_data_full %>%
+  add_residuals(Burrows_NBglm)
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(Post_Burrow_Count, resid, data = Burrows_Resid_SS) +
+  stat_smooth()
+
+#What about fitted vs residuals
+Burrows_Resid_SS <- Burrows_Resid_SS %>%
+  add_predictions(Burrows_NBglm)
+
+#Plot it!
+qplot(pred, resid, data = Burrows_Resid_SS) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(Burrows_Resid_SS$resid)
+
+#Plot the spread of the residuals
+ggplot(data = Burrows_Resid_SS, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(Burrows_Resid_SS$resid)
+
+#Finally, a histogram showing the spread of data
+hist(combined_data_full$Post_Burrow_Count)
+
+#Looks pretty non-normal
+
+#Is it poisson or gamma?
+#Test for poisson:
+gf = goodfit(combined_data_full$Post_Burrow_Count, 
+                     type= "poisson",method= "ML")
+plot(gf, main="Count data vs Poisson distribution")
+summary(gf)
+
+# to automatically get the pvalue
+gf.summary = capture.output(summary(gf))[[5]]
+pvalue = unlist(strsplit(gf.summary, split = " "))
+pvalue = as.numeric(pvalue[length(pvalue)]); pvalue
+
+# to mannualy compute the pvalue
+chisq = sum(  (gf$observed-gf$fitted)^2/gf$fitted )
+
+df = length(gf$observed)-1-1
+pvalue = pchisq(chisq,df)
+pvalue
+
+#Test for Gamma:
+Burrow <- combined_data_full$Post_Burrow_Count
+Burrow <- Burrow[Burrow > 0]
+gamma_test(Burrow)
+
+##
+## Burrow Counts to be Used for Primary Production
+Burrows_Resid_PP <- combined_data_full %>%
+  add_residuals(Burrows_PP_NBGLM)
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(Post_Burrow_Count, resid, data = Burrows_Resid_PP) +
+  stat_smooth()
+
+#What about fitted vs residuals
+Burrows_Resid_PP <- Burrows_Resid_PP %>%
+  add_predictions(Burrows_PP_NBGLM)
+
+#Plot it!
+qplot(pred, resid, data = Burrows_Resid_PP) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(Burrows_Resid_PP$resid)
+
+#Plot the spread of the residuals
+ggplot(data = Burrows_Resid_PP, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(Burrows_Resid_PP$resid)
+
+#Finally, a histogram showing the spread of data
+hist(combined_data_full$Post_Burrow_Count)
+
+plot(Burrows_PP_NBGLM)
+
+#Looks pretty non-normal, and gamma distributed, and identical to the first test
+
+
+#### Final Spartina Density ####
+SD_Resid <- combined_data_full %>%
+  add_residuals(SD_combined_NBglm)
+
+#NPP (Another Way of Doing it)
+#NPP_Resid <- combined_data_full %>%
+  #mutate(NPP_resid = NPP - mean(NPP))
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(Post_Live_SD, resid, data = SD_Resid) +
+  stat_smooth()
+
+#What about fitted vs residuals
+SD_Resid <- SD_Resid %>%
+  add_predictions(SD_combined_NBglm)
+
+#Plot it!
+qplot(pred, resid, data = SD_Resid) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(SD_Resid$resid)
+
+#Plot the spread of the residuals
+ggplot(data = SD_Resid, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(SD_Resid$resid)
+
+#Finally, a histogram showing the spread of data
+hist(combined_data_full$Post_Live_SD)
+
+#OK, so this is puzzling, doing it one way, and it is somewhat normal, but partly fails the Sharpiro
+#test for normality.  However, when doing it another way, it is clearly normal, and fine.  
+#Definitely something to ask Jarrett about.
+
+#### Spartina Biomass ####
+SB_Resid <- combined_data_full %>%
+  mutate(SB_resid = Spartina_Biomass - mean(Spartina_Biomass))
+
+SB_Resid_2 <- combined_data_full %>%
+  add_residuals(SB_Gamma_glm_2)
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(Spartina_Biomass, resid, data = SB_Resid_2) +
+  stat_smooth()
+
+#What about fitted vs residuals
+SB_Resid_2 <- SB_Resid_2 %>%
+  add_predictions(SB_Gamma_glm_2)
+
+#Plot it!
+qplot(pred, resid, data = SB_Resid_2) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(SB_Resid_2$resid)
+
+#Plot the spread of the residuals
+ggplot(data = SB_Resid_2, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(SB_Resid_2$resid)
+
+#Finally, a histogram showing the spread of data
+hist(combined_data_full$Spartina_Biomass)
+
+#That looks pretty non-normal, and gamma distributed to me!
+#Let's test if it is gamma distributed
+fit_gamma <- fitdist(combined_data_full$Spartina_Biomass, distr = "gamma", method = "mme")
+plot(fit_gamma)
+
+#### Decomposition ####
+Decomp_Resid <- Decomp_2018_3 %>%
+  mutate(Decomp_resid = End_Mass_LB - mean(End_Mass_LB))
+
+Decomp_Resid_2 <- Decomp_2018_3 %>%
+  add_residuals(Decomp_lm)
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(End_Mass_LB, resid, data = Decomp_Resid_2) +
+  stat_smooth()
+
+#What about fitted vs residuals
+Decomp_Resid_2 <- Decomp_Resid_2 %>%
+  add_predictions(Decomp_lm)
+
+#Plot it!
+qplot(pred, resid, data = Decomp_Resid_2) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(Decomp_Resid_2$resid)
+
+#Plot the spread of the residuals
+ggplot(data = Decomp_Resid_2, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(Decomp_Resid_2$resid)
+
+#Finally, a histogram showing the spread of data
+hist(Decomp_2018_3$End_Mass_LB)
+
+#Great!  Decomposition looks pretty normal to me!
+
+#### Belowground Biomass ####
+BGB_Resid_2 <- BGB_Full_noNA %>%
+  add_residuals(BGB_lm)
+
+#Let's compare predictor vs residuals, there should be no relationship
+qplot(Mean_Core_Mass, resid, data = BGB_Resid_2) +
+  stat_smooth()
+
+#What about fitted vs residuals
+BGB_Resid_2 <- BGB_Resid_2 %>%
+  add_predictions(BGB_lm)
+
+#Plot it!
+qplot(pred, resid, data = BGB_Resid_2) +
+  stat_smooth()
+
+#Now qq plot
+qqnorm(BGB_Resid_2$resid)
+
+#Plot the spread of the residuals
+ggplot(data = BGB_Resid_2, mapping=aes(x=resid)) +
+  geom_density()
+
+#Test for normality using a Shapiro-Wilks Test
+shapiro.test(BGB_Resid_2$resid)
+
+#Finally, a histogram showing the spread of data
+hist(BGB_Full_noNA$Mean_Core_Mass)
+
+#Looks a little gamma-y to me, let's test it!
+fit_gamma_BGB <- fitdist(BGB_Full_noNA$Mean_Core_Mass, distr = "gamma", method = "mme")
+plot(fit_gamma_BGB)
+
+BGB_Log <- log(BGB_Full_noNA$Mean_Core_Mass)
+BGB_Log <- BGB_Log[BGB_Log > 0]
+gamma_test(BGB_Log)
+gamma_fit(BGB_Log)
+ks.test(BGB_Resid_2$resid, BGB_Resid_2$pred)
+
+#No, I guess it's normal
+
+```
+
+
+```{r}
+
+
+
+Burrows_NBglm <- glm.nb(data = combined_data_full,
+                            Post_Burrow_Count ~ 
+                              Density_Num *
+                              poly(Pre_Pene_AVG,2) +
+                              Location +
+                              Year_Fac,
+                            link = "log"
+)
+
+Anova(Burrows_NBglm)
+
+Burrows_NBglm_loc <- glm.nb(data = combined_data_full,
+                            Post_Burrow_Count ~ 
+                              Density_Num *
+                              Location +
+                              Year_Fac,
+                            link = "log"
+)
+
+
+library(AICcmodavg)
+aictab(list(Burrows_NBglm_loc, Burrows_NBglm))
+
+
+visreg2d(Burrows_NBglm, xvar = "Density_Num", yvar = "Pre_Pene_AVG")
+
+
+ggplot(combined_data_full,
+       aes(x = Density_Num, y = Post_Burrow_Count, color = Location)) +
+  geom_point()
+
+
+
+ggplot(combined_data_full,
+       aes(x = Pre_Pene_AVG, y = Post_Burrow_Count, color =Location)) +
+  geom_point()
+
+
+library(modelr)
+dat <- data_grid(combined_data_full,
+                 Density_Num = c(0,5,10,15,20),
+                 Pre_Pene_AVG = 0:40,
+                 Location = c("NAN", "PIE"),
+                 Year_Fac = 1)
+
+
+pred_val <- add_predictions(dat, Burrows_NBglm, type = "response", var = "Post_Burrow_Count")
+
+
+
+ggplot(pred_val,
+       aes(x = Pre_Pene_AVG, y = Post_Burrow_Count, color = Location)) +
+  geom_line() +
+  facet_wrap(~Density_Num, scale = "free")
+
+
+
+
+dat2 <- data_grid(combined_data_full,
+                 Density_Num = 0:30,
+                 Pre_Pene_AVG = c(0,10,20,30,40),
+                 Location = c("NAN", "PIE"),
+                 Year_Fac = 1)
+
+
+pred_val2 <- add_predictions(dat2, Burrows_NBglm, type = "response", var = "Post_Burrow_Count")
+
+
+
+ggplot(pred_val2,
+       aes(x = Density_Num, y = Post_Burrow_Count, color = Location)) +
+  geom_line() +
+  facet_wrap(~Pre_Pene_AVG, scale = "free")
+
+
+#Center penetrometer by site
+combined_data_full <- combined_data_full %>%
+  dplyr::group_by(Location, Year_Fac) %>%
+  dplyr::mutate(pene_mean = mean(Pre_Pene_AVG),
+         pene_cent = Pre_Pene_AVG - pene_mean) %>%
+  ungroup()
+
+Burrows_NBglm_cent <- glm.nb(data = combined_data_full,
+                            Post_Burrow_Count ~ 
+                              Density_Num *
+                              poly(pene_cent, 2) +
+                              pene_mean, 
+                            link = "log"
+)
+
+Anova(Burrows_NBglm_cent)
+summary(Burrows_NBglm_cent)
+
+ggplot(combined_data_full,
+       aes(x = pene_cent, y = Post_Burrow_Count))+
+  geom_point())
+
+
+
+```
+
+
+
+
+
+
+
