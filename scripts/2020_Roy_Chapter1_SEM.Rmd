@@ -43,7 +43,7 @@ library(lattice)
 
 ```{r Data Manipulation, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE, echo=FALSE}
 #### Loading in My Data ####
-combined_data <- read_csv("../data/Complete_CrabCageExp.csv")
+combined_data <- read_csv("data/Complete_CrabCageExp.csv")
 
 #Make Year Discrete
 combined_data$Year <- as.character(combined_data$Year)
@@ -187,7 +187,7 @@ combined_data_full_2 <- combined_data_full %>%
   
 #### Decomposition ####
 #Load in the Decomp Data
-Decomp_2018 <- read_csv("../data/Decomp_Summer_2018_2.csv")
+Decomp_2018 <- read_csv("data/Decomp_Summer_2018_2.csv")
 Decomp_2018_Wider <- Decomp_2018 %>%
   pivot_wider(names_from = Depth, values_from = End_Mass_LB)
 
