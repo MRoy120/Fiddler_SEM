@@ -1,0 +1,125 @@
+---
+title: "DiagrammeR_Examples"
+author: "Michael Roy"
+date: "9/16/2020"
+output: html_document
+---
+
+```{r DiagrammeR examples, warning=FALSE, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
+grViz(" 
+  digraph CFA {
+    # Multiple level nodes
+    node [shape = ellipse, color=CornflowerBlue]
+    a [label = '@@1']; 
+    b [label = '@@2']; 
+    c [label = '@@3']; 
+    d [label = '@@4'];
+
+    # Terminal branch nodes
+    node [shape = box, color = Crimson] 
+    e [label = 'Model 2'];
+    f [label = 'Model 4'];
+    g [label = 'Model 5'];
+    h [label = 'Model 7'];
+    i [label = 'Model 8'];
+
+     # Connect nodes with edges and labels
+    a -> b [label = 'Condition 1a']
+    a -> d [label = 'Condition 1b'] 
+    b -> e [label = 'Condition 2a'] 
+    b -> c [label = 'Condition 2b']
+    c -> f [label = 'Condition 3a']
+    c -> g [label = 'Condition 3b']
+    d -> h [label = 'Condition 4a'] 
+    d -> i [label = 'Condition 4b'] 
+  }
+
+[1]: 'Split 1' 
+[2]: paste0('Model 1\\n Split 2') 
+[3]: paste0('Model 3\\n Split 3') 
+[4]: paste0('Model 6\\n Split 4') 
+") 
+
+grViz("
+  digraph CFA {
+    # latent variables
+    node [shape = ellipse, color=CornflowerBlue]
+    a [label = '@@1'];
+    b [label = '@@2'];
+    c [label = '@@3'];
+    d [label = '@@4'];
+
+    node [shape = box, color = Crimson]
+    e [label = 'Model 2'];
+    f [label = 'Model 4'];
+    g [label = 'Model 5'];
+    h [label = 'Model 7'];
+    i [label = 'Model 8'];
+
+    # Define arrow length for first group
+    edge [color = grey, minlen = 1]
+    a -> b [label = 'Condition 1a']
+    a -> d [label = 'Condition 1b']
+    b -> c [label = 'Condition 2b']
+    c -> f [label = 'Condition 3a']
+    c -> g [label = 'Condition 3b']
+
+    # Define edge length for models 2, 7 and 8
+    edge [color = grey, minlen = 2]
+    b -> e [label = 'Condition 2a']
+    d -> h [label = 'Condition 4a']
+    d -> i [label = 'Condition 4b']
+  } 
+
+[1]: 'Split 1'
+[2]: paste0('Model 1\\n Split 2')
+[3]: paste0('Model 3\\n Split 3')
+[4]: paste0('Model 6\\n Split 4')
+") 
+
+grViz("
+digraph boxes_and_circles {
+
+  # a 'graph' statement
+  graph [overlap = true, fontsize = 10,
+  layout = twopi,
+       rankdir = LR]
+
+  # several 'node' statements
+  node [shape = box,
+        fontname = Helvetica]
+  A; B; C; D; E; F
+
+  node [shape = circle,
+        fixedsize = true,
+        width = 0.9] // sets as circles
+  1; 2; 3; 4; 5; 6; 7; 8
+
+  # several 'edge' statements
+  A->1 B->2 B->3 B->4 C->A
+  1->D E->A 2->4 1->5 1->F
+  E->6 4->6 5->7 6->7 3->8
+}
+"
+)
+
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+
+      # edge definitions with the node IDs
+      tab1 -> tab2 -> tab3 -> tab4 -> tab5;
+      }
+
+      [1]: 'Questionnaire sent to n=1000 participants'
+      [2]: 'Participants responded to questionnaire n=850'
+      [3]: 'Participants came to clinic for evaluation n=700'
+      [4]: 'Participants eligible for the study n=600'
+      [5]: 'Study sample n=600'
+      ")
+```
