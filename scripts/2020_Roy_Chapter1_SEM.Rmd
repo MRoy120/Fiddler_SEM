@@ -37,9 +37,6 @@ library(lattice)
  
 ```
 
-**Thank you everyone for all of your feedback!  Basically, what I'm looking for is what you guys think about these models. Are they clear?  Did I mess anything?  What conclusions would you draw from each one? What is important? What can I remove? Are there models that I missed? General thoughts?**
-
-**I'm going to go through each model in detail tomorrow, so don't worry about trying to piece everything together if things aren't clear!**
 
 ```{r Data Manipulation, warning=FALSE, cache=TRUE, message=FALSE, tidy=TRUE, echo=FALSE}
 #### Loading in My Data ####
@@ -549,6 +546,7 @@ plot(SS_Model_PIE, show = "Estimate")
 
 ```
 
+
 ## Soil Strength DAGs
 
 
@@ -682,125 +680,6 @@ grViz("digraph Soil_Strength {
 
 ```
 
-```{r DiagrammeR examples, warning=FALSE, cache=TRUE, message=FALSE, echo=FALSE, eval=FALSE}
-grViz(" 
-  digraph CFA {
-    # Multiple level nodes
-    node [shape = ellipse, color=CornflowerBlue]
-    a [label = '@@1']; 
-    b [label = '@@2']; 
-    c [label = '@@3']; 
-    d [label = '@@4'];
-
-    # Terminal branch nodes
-    node [shape = box, color = Crimson] 
-    e [label = 'Model 2'];
-    f [label = 'Model 4'];
-    g [label = 'Model 5'];
-    h [label = 'Model 7'];
-    i [label = 'Model 8'];
-
-     # Connect nodes with edges and labels
-    a -> b [label = 'Condition 1a']
-    a -> d [label = 'Condition 1b'] 
-    b -> e [label = 'Condition 2a'] 
-    b -> c [label = 'Condition 2b']
-    c -> f [label = 'Condition 3a']
-    c -> g [label = 'Condition 3b']
-    d -> h [label = 'Condition 4a'] 
-    d -> i [label = 'Condition 4b'] 
-  }
-
-[1]: 'Split 1' 
-[2]: paste0('Model 1\\n Split 2') 
-[3]: paste0('Model 3\\n Split 3') 
-[4]: paste0('Model 6\\n Split 4') 
-") 
-
-grViz("
-  digraph CFA {
-    # latent variables
-    node [shape = ellipse, color=CornflowerBlue]
-    a [label = '@@1'];
-    b [label = '@@2'];
-    c [label = '@@3'];
-    d [label = '@@4'];
-
-    node [shape = box, color = Crimson]
-    e [label = 'Model 2'];
-    f [label = 'Model 4'];
-    g [label = 'Model 5'];
-    h [label = 'Model 7'];
-    i [label = 'Model 8'];
-
-    # Define arrow length for first group
-    edge [color = grey, minlen = 1]
-    a -> b [label = 'Condition 1a']
-    a -> d [label = 'Condition 1b']
-    b -> c [label = 'Condition 2b']
-    c -> f [label = 'Condition 3a']
-    c -> g [label = 'Condition 3b']
-
-    # Define edge length for models 2, 7 and 8
-    edge [color = grey, minlen = 2]
-    b -> e [label = 'Condition 2a']
-    d -> h [label = 'Condition 4a']
-    d -> i [label = 'Condition 4b']
-  } 
-
-[1]: 'Split 1'
-[2]: paste0('Model 1\\n Split 2')
-[3]: paste0('Model 3\\n Split 3')
-[4]: paste0('Model 6\\n Split 4')
-") 
-
-grViz("
-digraph boxes_and_circles {
-
-  # a 'graph' statement
-  graph [overlap = true, fontsize = 10,
-  layout = twopi,
-       rankdir = LR]
-
-  # several 'node' statements
-  node [shape = box,
-        fontname = Helvetica]
-  A; B; C; D; E; F
-
-  node [shape = circle,
-        fixedsize = true,
-        width = 0.9] // sets as circles
-  1; 2; 3; 4; 5; 6; 7; 8
-
-  # several 'edge' statements
-  A->1 B->2 B->3 B->4 C->A
-  1->D E->A 2->4 1->5 1->F
-  E->6 4->6 5->7 6->7 3->8
-}
-"
-)
-
-grViz("digraph flowchart {
-      # node definitions with substituted label text
-      node [fontname = Helvetica, shape = rectangle]        
-      tab1 [label = '@@1']
-      tab2 [label = '@@2']
-      tab3 [label = '@@3']
-      tab4 [label = '@@4']
-      tab5 [label = '@@5']
-
-      # edge definitions with the node IDs
-      tab1 -> tab2 -> tab3 -> tab4 -> tab5;
-      }
-
-      [1]: 'Questionnaire sent to n=1000 participants'
-      [2]: 'Participants responded to questionnaire n=850'
-      [3]: 'Participants came to clinic for evaluation n=700'
-      [4]: 'Participants eligible for the study n=600'
-      [5]: 'Study sample n=600'
-      ")
-```
-
 
 ## Soil Strength Visreg
 
@@ -813,36 +692,45 @@ visreg(Burrows_NBglm,
        "Pre_Pene_AVG", 
        scale = "response", 
        by = "Density_Num",
-       breaks = c(0, 4, 8, 12, 16, 20),
+       #breaks = c(0, 4, 8, 12, 16, 20),
+       breaks = c(seq(0, 20, 4)),
+       layout = c(6, 1),
        ylab = "Crab Burrow Density",
-       xlab = "Initial Soil Strength"
-       )
+       xlab = "Initial Soil Strength",
+       gg = TRUE,
+       strip.names = c("Initial Crab Density: 0", "Initial Crab Density: 4",
+                       "Initial Crab Density: 8", "Initial Crab Density: 12",
+                       "Initial Crab Density: 16", "Initial Crab Density: 20"),
+       ) +
+  theme_bw() +
+  scale_y_continuous(limits = c(0, 35)) +
+  My_Font_Sizes +
+  theme(strip.text.x = element_text(size = 15, colour = "black", angle = 360)) +
+  ggsave(filename = "2020_ISS_CBD_ICD_Visreg.png",
+         width = 15, 
+         height = 5)
 
 #Initial Crab Density to Final Burrow Density by Soil Strength
 visreg(Burrows_NBglm, 
        "Density_Num", 
        scale = "response", 
        by = c("Pre_Pene_AVG"),
-       breaks = c(0, 10, 20, 30),
+       breaks = c(seq(0, 30, 10)),
        ylab = "Crab Burrow Density",
-       xlab = "Initial Crab Density"
-       #gg = TRUE
-       ) #+
-  #theme_bw() #+
-  #aes(color = "Site")
-
-#Initial Burrow Density to Final Burrow Density
-visreg(Burrows_NBglm, 
-       "Density_Num", 
-       scale = "response", 
-       #by = c("Pre_Pene_AVG"),
-       #breaks = c(0, 4, 8, 12, 16, 20),
-       ylab = "Crab Burrow Density",
-       xlab = "Initial Crab Density"
-       #gg = TRUE
-       ) #+
-  #theme_bw() #+
-  #aes(color = "Site")
+       xlab = "Initial Crab Density",
+       layout = c(2, 2),
+       strip.names = c("Initial Soil Strength: 0", "Initial Soil Strength: 10",
+                       "Initial Soil Strength: 20", "Initial Soil Strength: 30"),
+       gg = TRUE
+       ) +
+  theme_bw() +
+  scale_y_continuous(limits = c(0, 25)) +
+  scale_x_continuous(breaks = c(0, 4, 8, 12, 16, 20)) +
+  My_Font_Sizes +
+  theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
+  ggsave(filename = "2020_ICD_CBD_ISS_Visreg.png",
+         width = 15, 
+         height = 5)
 
 #Initial Burrow Density to Final Burrow Density by Site
 visreg(Post_Pene_lm, 
