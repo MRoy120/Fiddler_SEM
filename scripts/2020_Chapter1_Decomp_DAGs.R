@@ -1,4 +1,4 @@
-source("scripts/2020_Chapter1_Decomp_SEM.R.R")
+source("scripts/2020_Chapter1_Decomp_SEM.R")
 
 #### Decomposition DAGs - PSEM Plots ####
 plot(decomp_SEM, show = "Estimate")
@@ -142,8 +142,7 @@ grViz("digraph Soil_Strength {
   [6]: 'Burrow Density and\\nDepth Interaction\\n'
   [7]: 'Final Litterbag Mass'
       
-"
-) %>%
+") %>%
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/Decomp_DAG.jpg")
