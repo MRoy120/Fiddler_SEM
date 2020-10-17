@@ -121,4 +121,7 @@ grViz("digraph Soil_Strength {
   [4]: 'Initial Soil Strength'
   [5]: 'Final Soil Strength'
       
-")
+") %>%
+  export_svg %>% 
+  charToRaw %>% 
+  rsvg_png("figures/SS_DAG.jpg")

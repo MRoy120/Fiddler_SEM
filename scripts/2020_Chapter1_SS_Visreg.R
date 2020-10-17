@@ -19,7 +19,7 @@ visreg(Burrows_NBglm,
   scale_y_continuous(limits = c(0, 35)) +
   My_Font_Sizes +
   theme(strip.text.x = element_text(size = 15, colour = "black", angle = 360)) +
-  ggsave(filename = "2020_ISS_CBD_ICD_Visreg.png",
+  ggsave(filename = "figures/2020_ISS_CBD_ICD_Visreg.png",
          width = 15, 
          height = 5)
 
@@ -41,7 +41,7 @@ visreg(Burrows_NBglm,
   scale_x_continuous(breaks = c(0, 4, 8, 12, 16, 20)) +
   My_Font_Sizes +
   theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
-  ggsave(filename = "2020_ICD_CBD_ISS_Visreg.png",
+  ggsave(filename = "figures/2020_ICD_CBD_ISS_Visreg.png",
          width = 15, 
          height = 5)
 
@@ -71,7 +71,7 @@ visreg(Post_Pene_lm,
   theme_bw() +
   My_Font_Sizes +
   theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
-  ggsave(filename = "2020_CBD_FSS_ISS_Visreg.png",
+  ggsave(filename = "figures/2020_CBD_FSS_ISS_Visreg.png",
          width = 15, 
          height = 5)
 
