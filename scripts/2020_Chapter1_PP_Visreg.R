@@ -7,16 +7,24 @@ visreg(SB_Gamma_combined_glm,
        by = "Post_Pene_AVG",
        breaks = c(seq(0, 30, 10)),
        layout = c(4, 1),
-       ylab = "Spartina alterniflora Biomass",
-       xlab = "Final S. alterniflora Shoot Density",
+       ylab = "S. alterniflora\nBiomass (grams)",
+       xlab = "Final S. alterniflora Shoot Density\n(shoots/plot)",
        gg = TRUE,
        strip.names = c("Final Soil Strength: 0", "Final Soil Strength: 10",
                        "Final Soil Strength: 20", "Final Soil Strength: 30"),
 ) +
   theme_bw() +
-  #scale_y_continuous(limits = c(0, 1000)) +
   My_Font_Sizes +
-  theme(strip.text.x = element_text(size = 15, colour = "black", angle = 360)) +
+  geom_point(alpha = 0.4, size = 0.6) +
+  labs(title = "Interaction Plot:",
+       subtitle = "Final S. alterniflora Shoot Density vs.\nFinal S. alterniflora Biomass faceted for each Final Soil Strength") +
+  theme(plot.title = element_text(size = 22, 
+                                  face = "bold"),
+        plot.subtitle = element_text(size = 18,
+                                     face = "bold"),
+        strip.text.x = element_text(size = 15, 
+                                    colour = "black", 
+                                    angle = 360)) +
   ggsave(filename = "figures/2020_PP_PLSD_PPA_Visreg.png",
          width = 15, 
          height = 5)
@@ -26,15 +34,30 @@ visreg(SB_Gamma_combined_glm,
        "Post_Live_SD", 
        scale = "response", 
        by = "Site",
-       ylab = "Spartina alterniflora Biomass",
-       xlab = "Final S. alterniflora Shoot Density",
+       ylab = "S. alterniflora\nBiomass (grams)",
+       xlab = "Final S. alterniflora Shoot Density\n(shoots/plot)",
        strip.names = c("PIE", "NAN"),
        gg = TRUE,
-) +
-  theme_bw() +
-  scale_color_discrete() +
+       line.par = list(col = "slategray")) +
+  theme_bw(base_family = "Times") +
   My_Font_Sizes +
-  theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
+  geom_point(alpha = 0.7, 
+             size = 0.95,
+             aes(color = Site)) +
+  scale_color_manual(values = c("darkred", "dodgerblue3")) +
+  #scale_colour_discrete(name  = "Site",
+  #breaks = c("0", "1"),
+  #labels = c("PIE", "NAN")) +
+  labs(title = "Interaction Plot:",
+       subtitle = "Final S. alterniflora Shoot Density vs.\nFinal S. alterniflora Biomass faceted for each Site") +
+  theme(plot.title = element_text(size = 18, 
+                                  face = "bold"),
+        plot.subtitle = element_text(size = 14, 
+                                     face = "bold"),
+        strip.text.x = element_text(size = 15, 
+                                    colour = "black", 
+                                    angle = 360),
+        legend.position = "none") +
   ggsave(filename = "figures/2020_PP_Site_Visreg.png",
          width = 10, 
          height = 5)
