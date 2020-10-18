@@ -206,18 +206,31 @@ Decomp_2 <- combined_data_2018 %>%
 #OK, now join the two together
 Decomp_2018 <- full_join(Decomp_2, Decomp_2018) 
 Decomp_2018$Year <- as.character(Decomp_2018$Year)
-Decomp_2018_2 <- factor(Decomp_2018$Depth, levels = c("5", "15"))
+#Decomp_2018_2 <- factor(Decomp_2018$Depth, levels = c("5", "15"))
 Decomp_2018_3 <- full_join(combined_data_full_2018, Decomp_2018) 
 Decomp_2018_3 <- na.omit(Decomp_2018_3)
 Decomp_2018_3$Depth <- as.numeric(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- as.character(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- as.factor(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- factor(Decomp_2018_3$Depth, labels=c("5","15"))
+#Decomp_2018_3 <- Decomp_2018_3 %>%
+  #group_by(Replication, Density_NN) %>%
+  #mutate(row_length = length(Replication)) %>%
+  #ungroup()
 
 Decomp_2018_Wider <- full_join(Decomp_2, Decomp_2018_Wider)
 Decomp_2018_Wider$Year <- as.character(Decomp_2018_Wider$Year)
 Decomp_2018_Wider_2 <- full_join(combined_data_full_2018, Decomp_2018_Wider)
-Decomp_2018_Wider_2 <- na.omit(Decomp_2018_Wider_2)
+Decomp_2018_Wider_2 <- filter(Decomp_2018_Wider_2, Replication %in% c("One",
+                                                                      "Two",
+                                                                      "Three",
+                                                                      "Four"))
+
+Decomp_2018_Wider_2 <- Decomp_2018_Wider_2 %>%
+  dplyr::rename(depth_five = `5`) %>%
+  dplyr::rename(depth_fifteen = `15`)
+
+#Decomp_2018_Wider_2 <- na.omit(Decomp_2018_Wider_2)
 
 Decomp_2018_4 <- Decomp_2018_3 %>%
   dplyr::select(Year, Year_Fac, Location, Site, Density_Num, Post_Burrow_Count, 
@@ -1895,7 +1908,8 @@ Post_Pene_combined_lm_3 <- lm(data = Decomp_2018_3,
                               Post_Pene_AVG ~ 
                                 Site +
                                 Post_Burrow_Count + 
-                                Pre_Pene_AVG #+
+                                Pre_Pene_AVG +
+                                Depth
                                 #Pre_Live_SD *
                                 #Post_Live_SD
                               )
@@ -1906,9 +1920,9 @@ Post_Pene_combined_lm_Wider_2 <- lm(data = Decomp_2018_Wider_2,
                               Post_Pene_AVG ~ 
                                 Site +
                                 Post_Burrow_Count + 
-                                Pre_Pene_AVG +
-                                Pre_Live_SD *
-                                Post_Live_SD
+                                Pre_Pene_AVG #+
+                                #Pre_Live_SD *
+                                #Post_Live_SD
                               )
 summary(Post_Pene_combined_lm_Wider_2)
 
@@ -1917,7 +1931,8 @@ Burrows_combined_NBglm_3 <- glm.nb(data = Decomp_2018_3,
                             Post_Burrow_Count ~ 
                               Density_Num *
                               Pre_Pene_AVG +
-                              Site #+
+                              Site +
+                              Depth
                               #Pre_Live_SD
                             ,
                             link = "log"
@@ -1926,12 +1941,30 @@ summary(Burrows_combined_NBglm_3)
 summary(glm.nb(data = combined_data_full_2017, Post_Burrow_Count ~ Density_Num * Pre_Pene_AVG + Site))
 summary(glm.nb(data = combined_data_full, Post_Burrow_Count ~ Density_Num * Pre_Pene_AVG + Site + Year))
 
+#Wider
+Burrows_combined_NBglm_wider <- glm.nb(data = Decomp_2018_Wider_2, 
+                            Post_Burrow_Count ~ 
+                              Density_Num *
+                              Pre_Pene_AVG +
+                              Site,
+                            link = "log"
+                            )
+summary(Burrows_combined_NBglm_wider)
+
 #Initial Soil Strength
 Pre_Pene_combined_lm_3 <- lm(data = Decomp_2018_3, 
                            Pre_Pene_AVG ~
-                             Site
+                             Site +
+                             Depth
                            )
 summary(Pre_Pene_combined_lm_3)
+
+#Wider
+Pre_Pene_combined_lm_wide <- lm(data = Decomp_2018_Wider_2, 
+                           Pre_Pene_AVG ~
+                             Site
+                           )
+summary(Pre_Pene_combined_lm_wide)
 
 #Spartina Biomass
 SB_Gamma_glm_3 <- glm(data = Decomp_2018_3,
@@ -1957,6 +1990,17 @@ Decomp_lm_3 <- lm(data = Decomp_2018_3,
                   Site
                )
 summary(Decomp_lm_3)
+
+#Wider
+Decomp_lm_wider <- lm(data = Decomp_2018_Wider_2,
+                End_Mass_LB ~
+                  Post_Burrow_Count *
+                  depth_five +
+                  depth_fifteen +
+                  Pre_Pene_AVG +
+                  Site
+               )
+summary(Decomp_lm_wider)
 
 #Final Spartina Density
 SD_combined_NBglm_3 <- glm.nb(data = Decomp_2018_3,
