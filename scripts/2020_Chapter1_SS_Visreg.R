@@ -47,7 +47,7 @@ visreg(Burrows_NBglm,
   scale_y_continuous(limits = c(0, 25)) +
   scale_x_continuous(breaks = c(0, 4, 8, 12, 16, 20)) +
   My_Font_Sizes +
-  theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
+  theme(strip.text.x = element_text(size = 18, colour = "black", angle = 360)) +
   ggsave(filename = "figures/2020_ICD_CBD_ISS_Visreg.png",
          width = 15, 
          height = 5)
@@ -66,7 +66,7 @@ visreg(Post_Pene_lm,
   theme_bw(base_family = "Times") +
   scale_color_discrete() +
   My_Font_Sizes +
-  theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
+  theme(strip.text.x = element_text(size = 18, colour = "black", angle = 360)) +
   geom_point(alpha = 0.7, 
              size = 0.95,
              aes(color = Site)) +

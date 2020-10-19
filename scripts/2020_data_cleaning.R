@@ -173,6 +173,22 @@ Decomp_2018_3$Depth <- as.numeric(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- as.factor(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- factor(Decomp_2018_3$Depth, labels=c("5","15"))
 
+Decomp_2018_3 <- Decomp_2018_3 %>%
+  group_by(End_Mass_LB) %>%
+  mutate(Mass_Trans = 1.02-End_Mass_LB) %>%
+  ungroup()
+
+Decomp_2018_3$Depth <- as.character(Decomp_2018_3$Depth)
+
+Depths <- c(`5` = "Five", `15` = "Fifteen")
+
+Decomp_2018_3 <- Decomp_2018_3 %>%
+  group_by(Depth) %>%
+  mutate(Depth_Chr = as.character(Depths[Decomp_2018_3$Depth])) %>%
+  ungroup()
+
+Decomp_2018_3$Depth <- as.numeric(Decomp_2018_3$Depth)
+
 Decomp_2018_Wider <- full_join(Decomp_2, Decomp_2018_Wider)
 Decomp_2018_Wider$Year <- as.character(Decomp_2018_Wider$Year)
 Decomp_2018_Wider_2 <- full_join(combined_data_full_2018, Decomp_2018_Wider)
@@ -195,7 +211,7 @@ Decomp_2018_4 <- Decomp_2018_3 %>%
 
 #### Font Sizes and Colors ####
 
-My_Font_Sizes = theme(axis.title = element_text(face = "bold", size = 20), 
+My_Font_Sizes = theme(axis.title = element_text(face = "bold", size = 18), 
                       axis.text = element_text(size = 16),
                       legend.text = element_text(size = 16),
                       legend.title = element_text(size = 18))

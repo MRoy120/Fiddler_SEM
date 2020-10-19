@@ -126,7 +126,7 @@ grViz("digraph Soil_Strength {
   #All Endogenous Variables
   edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
   Depth -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
-  Initial_SS -> End_Mass_LB
+  Initial_SS -> End_Mass_LB [color = SaddleBrown]
   Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown]
   Burrow_Density -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   
