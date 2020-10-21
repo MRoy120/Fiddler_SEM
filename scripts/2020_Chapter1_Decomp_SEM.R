@@ -23,7 +23,7 @@ summary(Pre_Pene_decomp_lm)
 
 #Decomposition
 Decomp_lm <- lm(data = Decomp_2018_3,
-                  Mass_Trans ~
+                  End_Mass_LB ~
                     Post_Burrow_Count *
                     Depth +
                     Pre_Pene_AVG +
@@ -39,8 +39,11 @@ decomp_SEM <- psem(Pre_Pene_decomp_lm,
 summary(decomp_SEM)
 
 #As a side note for visreg
+Decomp_2018_3 <- Decomp_2018_3 %>%
+  mutate(Depth_Chr_alt = as.character(Depth))
+
 Decomp_lm_vis <- lm(data = Decomp_2018_3,
-                Mass_Trans ~
+                End_Mass_LB ~
                   Post_Burrow_Count *
                   Depth_Chr +
                   Pre_Pene_AVG +

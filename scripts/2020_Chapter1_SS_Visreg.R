@@ -66,7 +66,6 @@ visreg(Post_Pene_lm,
   theme_bw(base_family = "Times") +
   scale_color_discrete() +
   My_Font_Sizes +
-  theme(strip.text.x = element_text(size = 18, colour = "black", angle = 360)) +
   geom_point(alpha = 0.7, 
              size = 0.95,
              aes(color = Site)) +
@@ -80,9 +79,12 @@ visreg(Post_Pene_lm,
                                   face = "bold"),
         plot.subtitle = element_text(size = 14, 
                                      face = "bold"),
+        strip.text.x = element_text(size = 15, 
+                                    colour = "black", 
+                                    angle = 360),
         legend.position="none") +
   ggsave(filename = "figures/2020_SS_Site_Visreg.png",
-         width = 8, 
+         width = 10, 
          height = 5)
 
 #Same plot, but with overlay

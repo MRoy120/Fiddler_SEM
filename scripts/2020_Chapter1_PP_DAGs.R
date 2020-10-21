@@ -240,7 +240,7 @@ grViz("digraph Soil_Strength {
       # several 'node' statements
       # Exogenous Variables
       node [shape = rectangle,
-            fontname = Helvetica,
+            fontname = Times,
             width = 1.3,
             fontcolor = darkslategray,
             color = darkslategray,
@@ -321,6 +321,7 @@ grViz("digraph Soil_Strength {
   #Crab Density and Soil Strength Interaction
   edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
   CrabSoil_Intrctn->Burrow_Density
+  CrabSoil_Intrctn->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   
   #Soil Strength and Final Shoot Density Interaction
   edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 4]

@@ -3,19 +3,7 @@ source("scripts/2020_data_cleaning.R")
 
 #### Piecewise (Local) SEM for Primary Production####
 ### Building the Models
-## Soil  Strength
-Post_Pene_combined_lm <- lm(data = combined_data_full, 
-                            Post_Pene_AVG ~ 
-                              Post_Burrow_Count + 
-                              Pre_Pene_AVG +
-                              Site +
-                              Year_Fac +
-                              Pre_Live_SD #*
-                              #Post_Live_SD
-)
-summary(Post_Pene_combined_lm)
-
-#Burrows
+## Burrow Density
 Burrows_combined_NBglm <- glm.nb(data = combined_data_full,
                                  Post_Burrow_Count ~ 
                                    Density_Num *
@@ -27,7 +15,7 @@ Burrows_combined_NBglm <- glm.nb(data = combined_data_full,
 )
 summary(Burrows_combined_NBglm)
 
-#Initial Soil Strength
+## Initial Soil Strength
 Pre_Pene_combined_lm <- lm(data = combined_data_full, 
                            Pre_Pene_AVG ~
                              Site +
@@ -35,23 +23,19 @@ Pre_Pene_combined_lm <- lm(data = combined_data_full,
 )
 summary(Pre_Pene_combined_lm)
 
-#Spartina Biomass
-SB_Gamma_combined_glm <- glm(data = combined_data_full,
-                             Spartina_Biomass ~  
-                               Pre_Live_SD * 
-                               Post_Live_SD +
-                               Post_Pene_AVG *
-                               Post_Live_SD +
-                               Post_Burrow_Count +
-                               Pre_Pene_AVG +
-                               Density_Num +
-                               Site +
-                               Year_Fac,
-                             family = Gamma(link = "log")
+## Final Soil  Strength
+Post_Pene_combined_lm <- lm(data = combined_data_full, 
+                            Post_Pene_AVG ~ 
+                              Post_Burrow_Count + 
+                              Pre_Pene_AVG +
+                              Site +
+                              Year_Fac +
+                              Pre_Live_SD #*
+                              #Post_Live_SD
 )
-summary(SB_Gamma_combined_glm)
+summary(Post_Pene_combined_lm)
 
-#Final Shoot Density (SD)
+## Final Shoot Density (SD)
 SD_combined_NBglm <- glm.nb(data = combined_data_full,
                             Post_Live_SD ~
                               Density_Num +
@@ -63,6 +47,22 @@ SD_combined_NBglm <- glm.nb(data = combined_data_full,
                             link = "log"
 )
 summary(SD_combined_NBglm)
+
+## Spartina Biomass
+SB_Gamma_combined_glm <- glm(data = combined_data_full,
+                             Spartina_Biomass ~  
+                               Pre_Live_SD * 
+                               Post_Live_SD +
+                               Post_Burrow_Count +
+                               Pre_Pene_AVG *
+                               Density_Num +
+                               Post_Live_SD * 
+                               Post_Pene_AVG +
+                               Site +
+                               Year_Fac,
+                             family = Gamma(link = "log")
+)
+summary(SB_Gamma_combined_glm)
 
 # Building DHARMa residual diagnostics plots
 SD_nb_res_combined <- simulateResiduals(Burrows_combined_NBglm)

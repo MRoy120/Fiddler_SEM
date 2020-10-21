@@ -171,7 +171,7 @@ Decomp_2018_3 <- na.omit(Decomp_2018_3)
 Decomp_2018_3$Depth <- as.numeric(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- as.character(Decomp_2018_3$Depth)
 #Decomp_2018_3$Depth <- as.factor(Decomp_2018_3$Depth)
-#Decomp_2018_3$Depth <- factor(Decomp_2018_3$Depth, labels=c("5","15"))
+Decomp_2018_3$Depth <- factor(Decomp_2018_3$Depth, labels=c("5","15"))
 
 Decomp_2018_3 <- Decomp_2018_3 %>%
   group_by(End_Mass_LB) %>%

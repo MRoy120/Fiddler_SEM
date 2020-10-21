@@ -34,9 +34,18 @@ Pre_Pene_lm <- lm(data = combined_data_full,
 summary(Pre_Pene_lm)
 
 #### Soil Strength Piecewise SEM ####
-#Original Names
 SS_Model <- psem(Burrows_NBglm,
                  Post_Pene_lm,
                  Pre_Pene_lm
 )
 summary(SS_Model)
+
+#Side comparison for initial and final soil strength differences between sites
+#Initial
+summary(lm(data = combined_data_full, 
+           Pre_Pene_AVG ~ Site + Year))
+
+#Final
+summary(lm(data = combined_data_full, 
+           Post_Pene_AVG ~ Site + Year))
+

@@ -13,7 +13,7 @@ grViz("digraph Soil_Strength {
       # several 'node' statements
       # Exogenous Variables
       node [shape = rectangle,
-            fontname = Helvetica,
+            fontname = Times,
             width = 1.3,
             fontcolor = darkslategray,
             color = darkslategray,
@@ -84,7 +84,7 @@ grViz("digraph Soil_Strength {
       # several 'node' statements
       # Exogenous Variables
       node [shape = rectangle,
-            fontname = Helvetica,
+            fontname = Times,
             width = 1.3,
             fontcolor = darkslategray,
             color = darkslategray,
