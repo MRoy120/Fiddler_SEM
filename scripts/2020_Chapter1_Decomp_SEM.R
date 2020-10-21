@@ -36,7 +36,7 @@ decomp_SEM <- psem(Pre_Pene_decomp_lm,
                    Burrows_decomp_NBglm,
                    Decomp_lm
 )
-summary(decomp_SEM)
+summary(decomp_SEM) 
 
 #As a side note for visreg
 Decomp_2018_3 <- Decomp_2018_3 %>%

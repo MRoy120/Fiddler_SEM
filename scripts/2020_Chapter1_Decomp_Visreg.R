@@ -38,20 +38,22 @@ visreg(Decomp_lm_vis,
        scale = "response", 
        by = "Site",
        ylab = "Litterbag Mass\nTransformation (grams)",
-       xlab = "Depth (cm)",
+       xlab = "Depth\n(cm)",
        strip.names = c("PIE", "NAN"),
        gg = TRUE,
        line.par = list(col = "slategray")
 ) +
   theme_bw(base_family = "Times") +
-  scale_color_discrete() +
+  #scale_color_discrete() +
   My_Font_Sizes +
-  scale_color_manual(values = c("darkred", "dodgerblue3")) +
+  #scale_color_manual(values = c("darkred", "dodgerblue3")) +
   #scale_colour_discrete(name  = "Site",
   #breaks = c("0", "1"),
   #labels = c("PIE", "NAN")) +
   labs(title = "Interaction Plot:",
        subtitle = "Depth of Bag Burial vs.\nLitterbag Mass faceted for each Site") +
+  
+  #scale_x_discrete(breaks = c("Five", "Fifteen")) +
   theme(plot.title = element_text(size = 18, 
                                   face = "bold"),
         plot.subtitle = element_text(size = 14, 
@@ -69,7 +71,7 @@ visreg(Decomp_lm,
        "Pre_Pene_AVG", 
        scale = "response", 
        by = "Site",
-       ylab = "Litterbag Mass (grams)",
+       ylab = "Litterbag Mass\n(grams)",
        xlab = "Initial Soil Strength\n(cm)",
        strip.names = c("PIE", "NAN"),
        gg = TRUE,
@@ -101,7 +103,7 @@ visreg(Decomp_lm_vis,
        "Depth_Chr", 
        scale = "response", 
        by = "Post_Burrow_Count",
-       ylab = "Litterbag Mass (grams)",
+       ylab = "Litterbag Mass\n(grams)",
        xlab = "Depth\n(cm)",
        breaks = c(seq(0, 30, 10)),
        layout = c(4, 1),
@@ -128,7 +130,7 @@ visreg(Decomp_lm_vis,
                                     angle = 360),
         legend.position="none") +
   ggsave(filename = "figures/2020_Decomp_Depth_Burrows_Visreg.png",
-         width = 8, 
+         width = 9, 
          height = 5)
 
 

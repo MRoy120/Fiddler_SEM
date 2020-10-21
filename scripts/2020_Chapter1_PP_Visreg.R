@@ -129,6 +129,72 @@ visreg(SB_Gamma_combined_glm,
          width = 10, 
          height = 5)
 
+#Burrow density versus shoot density for each site
+visreg(SD_combined_NBglm, 
+       "Post_Burrow_Count", 
+       scale = "response", 
+       by = "Site",
+       ylab = "S. alterniflora\nShoot Density (shoots/plot)",
+       xlab = "Fiddler Crab Burrow Density\n(burrows/plot)",
+       strip.names = c("PIE", "NAN"),
+       gg = TRUE,
+       line.par = list(col = "slategray")) +
+  theme_bw(base_family = "Times") +
+  My_Font_Sizes +
+  geom_point(alpha = 0.7, 
+             size = 0.95,
+             aes(color = Site)) +
+  scale_color_manual(values = c("darkred", "dodgerblue3")) +
+  #scale_colour_discrete(name  = "Site",
+  #breaks = c("0", "1"),
+  #labels = c("PIE", "NAN")) +
+  labs(title = "Interaction Plot:",
+       subtitle = "Fiddler Crab Burrow Density vs.\nFinal S. alterniflora Shoot Density faceted for each Site") +
+  theme(plot.title = element_text(size = 18, 
+                                  face = "bold"),
+        plot.subtitle = element_text(size = 14, 
+                                     face = "bold"),
+        strip.text.x = element_text(size = 15, 
+                                    colour = "black", 
+                                    angle = 360),
+        legend.position = "none") +
+  ggsave(filename = "figures/2020_SD_Burrows_Site_Visreg.png",
+         width = 10, 
+         height = 5)
+
+#Initial shoot density vs. biomass for different final shoot densities
+visreg(SB_Gamma_combined_glm, 
+       "Pre_Live_SD", 
+       scale = "response", 
+       by = "Post_Live_SD",
+       ylab = "S. alterniflora\nBiomass (grams)",
+       xlab = "Initial S. alterniflora\nShoot Density (psi)",
+       breaks = c(seq(0, 60, 20)),
+       layout = c(5, 1),
+       gg = TRUE,
+       line.par = list(col = "slategray"),
+       strip.names = c("Final Shoot Density: 0", "Final Shoot Density: 20",
+                       "Final Shoot Density: 40", "Final Shoot Density: 60")
+       ) +
+  theme_bw(base_family = "Times") +
+  My_Font_Sizes +
+  geom_point(alpha = 0.7, 
+             size = 0.95) +
+  labs(title = "Interaction Plot:",
+       subtitle = "Initial S. alterniflora Shoot Density vs.\nFinal S. alterniflora Biomass faceted for different Final S. alterniflora Shoot Densities") +
+  theme(plot.title = element_text(size = 18, 
+                                  face = "bold"),
+        plot.subtitle = element_text(size = 14, 
+                                     face = "bold"),
+        strip.text.x = element_text(size = 15, 
+                                    colour = "black", 
+                                    angle = 360),
+        legend.position = "none") +
+  ggsave(filename = "figures/2020_PP_Biomass_Visreg_init-fin.png",
+         width = 14, 
+         height = 6)
+
+
 
 #A few scraps
 ggplot(data = combined_data_full, aes(x = Post_Live_SD,

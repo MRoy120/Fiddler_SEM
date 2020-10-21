@@ -296,9 +296,7 @@ grViz("digraph Soil_Strength {
   edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   Initial_SS->Burrow_Density
   Crab_Density->Burrow_Density
-  Initial_SS->Spartina_Biomass [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
   Initial_SS->Post_Live_SD 
-
   
   #Primary Production Exogenous Variables
   edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 3]
