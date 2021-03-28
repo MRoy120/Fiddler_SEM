@@ -149,8 +149,18 @@ combined_SEM_alt <- psem(Post_Pene_combined_lm_alt,
                          SD_combined_NBglm_alt,
                          Pre_Pene_combined_lm_alt)
 
-summary(combined_SEM_alt)
-plot(combined_SEM_alt, show = "unstd")
+combined_summary <- summary(combined_SEM_alt)
+combined_summary
+#plot(combined_SEM_alt, show = "unstd")
 
+## Generate a table
+# Isolate only the coefficients from the PSEM output
+combined_coefs <- combined_summary$coefficients
+
+# Use kableExtra to generate and save the table
+combined_coefs %>%
+  kbl() %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  save_kable("figures/Combined_Table.jpeg")
 
 

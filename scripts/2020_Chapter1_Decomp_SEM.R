@@ -36,7 +36,8 @@ decomp_SEM <- psem(Pre_Pene_decomp_lm,
                    Burrows_decomp_NBglm,
                    Decomp_lm
 )
-summary(decomp_SEM) 
+decomp_summary <- summary(decomp_SEM) 
+decomp_summary
 
 #As a side note for visreg
 Decomp_2018_3 <- Decomp_2018_3 %>%
@@ -51,5 +52,13 @@ Decomp_lm_vis <- lm(data = Decomp_2018_3,
 )
 summary(Decomp_lm_vis)
 
+## Generate a table
+# Isolate only the coefficients from the PSEM output
+decomp_coefs <- decomp_summary$coefficients
 
+# Use kableExtra to generate and save the table
+decomp_coefs %>%
+  kbl() %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  save_kable("figures/Decomp_Table.jpeg")
 

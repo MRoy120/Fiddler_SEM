@@ -38,8 +38,20 @@ SS_Model <- psem(Burrows_NBglm,
                  Post_Pene_lm,
                  Pre_Pene_lm
 )
-summary(SS_Model)
+SS_Model_Summary <- summary(SS_Model)
+SS_Model_Summary
 
+## Generate a table
+# Isolate only the coefficients from the PSEM output
+SS_coefs <- SS_Model_Summary$coefficients
+
+# Use kableExtra to generate and save the table
+SS_coefs %>%
+  kbl() %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+  save_kable("figures/SS_Table.jpeg")
+
+##
 #Side comparison for initial and final soil strength differences between sites
 #Initial
 summary(lm(data = combined_data_full, 
