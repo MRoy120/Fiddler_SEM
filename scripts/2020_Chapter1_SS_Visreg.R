@@ -140,7 +140,8 @@ visreg(Post_Pene_lm,
 ) +
   theme_bw() +
   My_Font_Sizes +
-  theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360))
+  theme(strip.text.x = element_text(size = 20, colour = "black", angle = 360)) +
+  labs(color="Initial Soil\nStrength")
 
 #Just plotting the relationship
 visreg(Post_Pene_lm, 
@@ -193,15 +194,30 @@ visreg2d(Burrows_NBglm,
          plot.type = "rgl"
 )
 
+library(RColorBrewer)
+library(jcolors)
+library(ggsci)
 # Initial Soil Strength and Crab Density to Final Burrow Density Interaction Heat Map
 visreg2d(Burrows_NBglm, 
-         x="Pre_Pene_AVG",
-         y="Density_Num",
+         y="Pre_Pene_AVG",
+         x="Density_Num",
          scale = "response", 
          main = "Final Burrow Density",
-         #by = "Density_Num",
+         xlab = "Initial Crab Density",
+         ylab = "Initial Soil Strength",
          #breaks = c(0, 4, 8, 12, 16, 20),
-         ylab = "Initial Crab Density",
-         xlab = "Initial Soil Strength",
-         #plot.type = "rgl"
-)
+         #col = colorRampPalette(brewer.pal(9,"YlOrRd"))(20),
+         plot.type='gg'
+) +
+  scale_fill_distiller("Burrow\nDensity",
+                       palette = "RdYlBu") +
+  #scale_colour_brewer(palette = "PiYG", direction = - 1) +
+  theme_bw(base_size = 18) +
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 22)) +
+  labs(title = "Interaction Plot of Soil Strength Initial Crab Density\nand Burrow Density",
+       subtitle = "Heat Map") +
+  ggsave(filename = "figures/2021_Crab_ISS_Burrows_Heat.png",
+         width = 10, 
+         height = 8)
+    

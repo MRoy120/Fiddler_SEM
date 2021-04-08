@@ -49,12 +49,43 @@ SD_combined_NBglm <- glm.nb(data = combined_data_full,
 summary(SD_combined_NBglm)
 
 ## Spartina Biomass
+# Initial soil strength and crab density interaction - no significant relationship
+# SB_Gamma_combined_glm <- glm(data = combined_data_full,
+#                              Spartina_Biomass ~  
+#                                Pre_Live_SD * 
+#                                Post_Live_SD +
+#                                Post_Burrow_Count +
+#                                Pre_Pene_AVG *
+#                                Density_Num +
+#                                Post_Live_SD * 
+#                                Post_Pene_AVG +
+#                                Site +
+#                                Year_Fac,
+#                              family = Gamma(link = "log")
+# )
+
+# Initial soil strength and burrow density interaction - no significant relationship
+# SB_Gamma_combined_glm <- glm(data = combined_data_full,
+#                              Spartina_Biomass ~  
+#                                Pre_Live_SD * 
+#                                Post_Live_SD +
+#                                Post_Burrow_Count *
+#                                Pre_Pene_AVG +
+#                                Density_Num +
+#                                Post_Live_SD * 
+#                                Post_Pene_AVG +
+#                                Site +
+#                                Year_Fac,
+#                              family = Gamma(link = "log")
+# )
+
+# Removing non-significant interaction terms 
 SB_Gamma_combined_glm <- glm(data = combined_data_full,
                              Spartina_Biomass ~  
                                Pre_Live_SD * 
                                Post_Live_SD +
                                Post_Burrow_Count +
-                               Pre_Pene_AVG *
+                               Pre_Pene_AVG +
                                Density_Num +
                                Post_Live_SD * 
                                Post_Pene_AVG +
@@ -62,6 +93,7 @@ SB_Gamma_combined_glm <- glm(data = combined_data_full,
                                Year_Fac,
                              family = Gamma(link = "log")
 )
+
 summary(SB_Gamma_combined_glm)
 
 # Building DHARMa residual diagnostics plots

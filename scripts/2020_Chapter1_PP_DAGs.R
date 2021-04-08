@@ -341,3 +341,106 @@ grViz("digraph Soil_Strength {
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/PP_DAG_2.jpg")
+
+# Simpler DAG ####
+grViz("digraph Soil_Strength {
+      # a 'graph' statement
+      graph [layout = dot,
+             overlap = false,
+             fontsize = 14,
+             rankdir = LR]
+
+      # several 'node' statements
+      # Exogenous Variables
+      node [shape = rectangle,
+            fontname = Times,
+            width = 1.3,
+            fontcolor = darkslategray,
+            color = darkslategray,
+            nodesep = 1,
+            penwidth = 2]
+      Crab_Density [label = '@@1']
+      
+      # Endogenous Variables
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 1.8,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Burrow_Density [label = '@@3']
+      Initial_SS [label = '@@4', color = darkslategray]
+      Final_SS [label = '@@5']
+  
+      # Soil Strength Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            height = 0.9,
+            color = steelblue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      CrabSoil_Intrctn [label = '@@2']
+      
+      # Primary Production
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2,
+            color = forestgreen,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      Spartina_Biomass [label = '@@7']
+      
+      # Soil Shoots Interaction
+      node [shape = rectangle,
+            fixedsize = true,
+            width = 2.1,
+            height = 0.9,
+            color = CadetBlue,
+            fontcolor = darkslategray,
+            penwidth = 2] 
+      SoilShoots_Intrctn [label = '@@10']
+  
+  # several 'edge' statements
+  #Soil Strength Exogenous Variables
+  edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Initial_SS->Burrow_Density
+  Crab_Density->Burrow_Density
+  
+  #Primary Production Exogenous Variables
+  edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 2]
+  Burrow_Density -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  Final_SS -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 4]
+  Burrow_Density->Final_SS [color = steelblue]
+  Initial_SS->Final_SS
+  Crab_Density->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  #Crab Density and Soil Strength Interaction
+  edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 3]
+  CrabSoil_Intrctn->Burrow_Density
+  CrabSoil_Intrctn->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  
+  #Soil Strength and Final Shoot Density Interaction
+  edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 3]
+  SoilShoots_Intrctn->Spartina_Biomass [label = '0.32']
+  }
+
+  [1]: 'Crab Density'
+  [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
+  [3]: 'Burrow Density'
+  [4]: 'Initial Soil Strength'
+  [5]: 'Final Soil Strength'
+  [6]: 'Initial Shoot Density'
+  [7]: 'Spartina Biomass'
+  [8]: 'Final Shoot Density'
+  [9]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
+  [10]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
+      
+")# %>%
+  export_svg %>% 
+  charToRaw %>% 
+  rsvg_png("figures/PP_DAG_3.jpg")
+

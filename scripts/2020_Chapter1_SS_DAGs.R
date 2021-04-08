@@ -77,9 +77,11 @@ grViz("digraph Soil_Strength {
 ## Excluding Site and Year
 grViz("digraph Soil_Strength {
       # a 'graph' statement
-      graph [overlap = false,
+      graph [layout = dot,
+             overlap = false,
              fontsize = 14,
-             ranksep = .25]
+             ranksep = .25,
+             rankdir = LR]
 
       # several 'node' statements
       # Exogenous Variables
@@ -109,7 +111,7 @@ grViz("digraph Soil_Strength {
   Initial_SS->Burrow_Density [label = '-0.013']
   Crab_Density->Burrow_Density [label = '-0.0085']
   
-  edge [color = DimGray, arrowhead = normal, minlen = 6, penwidth = 5]
+  edge [color = DimGray, arrowhead = normal, minlen = 4, penwidth = 5]
   CrabSoil_Intrctn->Burrow_Density [color = steelblue, label = '0.0027']
   Burrow_Density->Final_SS [color = steelblue, label = '-0.41']
   Initial_SS->Final_SS [label = '0.32']
@@ -124,4 +126,6 @@ grViz("digraph Soil_Strength {
 ") %>%
   export_svg %>% 
   charToRaw %>% 
-  rsvg_png("figures/SS_DAG.jpg")
+  rsvg_png("figures/SS_DAG.jpg",
+           width = 10000,
+           height = 4000)
