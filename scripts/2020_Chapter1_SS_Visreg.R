@@ -203,8 +203,8 @@ visreg2d(Burrows_NBglm,
          x="Density_Num",
          scale = "response", 
          main = "Final Burrow Density",
-         xlab = "Initial Crab Density",
-         ylab = "Initial Soil Strength",
+         xlab = "Initial Crab Density (crabs/plot)",
+         ylab = "Initial Soil Strength (psi)",
          #breaks = c(0, 4, 8, 12, 16, 20),
          #col = colorRampPalette(brewer.pal(9,"YlOrRd"))(20),
          plot.type='gg'
@@ -215,7 +215,7 @@ visreg2d(Burrows_NBglm,
   theme_bw(base_size = 18) +
   theme(axis.text = element_text(size = 18),
         axis.title = element_text(size = 22)) +
-  labs(title = "Interaction Plot of Soil Strength Initial Crab Density\nand Burrow Density",
+  labs(title = "Interaction Plot of Soil Strength, Initial Crab Density,\nand Burrow Density",
        subtitle = "Heat Map") +
   ggsave(filename = "figures/2021_Crab_ISS_Burrows_Heat.png",
          width = 10, 

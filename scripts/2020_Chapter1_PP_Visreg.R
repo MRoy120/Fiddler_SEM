@@ -230,3 +230,28 @@ visreg(SB_Gamma_combined_glm,
 ) +
   geom_point(alpha = 0.7, 
              size = 0.95) 
+
+# Heat Map ####
+visreg2d(SB_Gamma_combined_glm, 
+         x="Post_Live_SD",
+         y="Post_Pene_AVG",
+         scale = "response", 
+         main = "Final Burrow Density",
+         xlab = "Final Shoot Density (shoots/quadrat)",
+         ylab = "Final Soil Strength (psi)",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         #col = colorRampPalette(brewer.pal(9,"YlOrRd"))(20),
+         plot.type='gg'
+) +
+  scale_fill_distiller("Spartina\nBiomass",
+                       palette = "RdYlBu") +
+  #scale_colour_brewer(palette = "PiYG", direction = - 1) +
+  theme_bw(base_size = 18) +
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 22)) +
+  labs(title = "Interaction Plot of Final Soil Strength, Final Shoot Density,\nand Spartina Biomass",
+       subtitle = "Heat Map") +
+  ggsave(filename = "figures/2021_Shoots_FSS_Biomass_Heat.png",
+         width = 10, 
+         height = 8)
+

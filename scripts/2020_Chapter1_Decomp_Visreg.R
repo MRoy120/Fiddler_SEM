@@ -133,5 +133,28 @@ visreg(Decomp_lm_vis,
          width = 9, 
          height = 5)
 
-
+# Heat Map ####
+visreg2d(Decomp_lm, 
+         x="Post_Burrow_Count",
+         y="Depth",
+         scale = "response", 
+         #main = "Final Burrow Density",
+         xlab = "Burrow Density (burrows/plot)",
+         ylab = "Depth (cm below surface)",
+         #breaks = c(0, 4, 8, 12, 16, 20),
+         #col = colorRampPalette(brewer.pal(9,"YlOrRd"))(20),
+         plot.type='gg'
+) +
+  scale_fill_distiller("Degree of\nDecomposition",
+                       palette = "RdYlBu") +
+  scale_y_continuous(trans = "reverse") +
+  #scale_colour_brewer(palette = "PiYG", direction = - 1) +
+  theme_bw(base_size = 18) +
+  theme(axis.text = element_text(size = 18),
+        axis.title = element_text(size = 22)) +
+  labs(title = "Interaction Plot of Burrow Density, Depth,\nand Decomposition",
+       subtitle = "Heat Map") +
+  ggsave(filename = "figures/2021_Decomp_Interaction.png",
+         width = 10, 
+         height = 8)
 
