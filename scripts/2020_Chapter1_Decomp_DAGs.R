@@ -48,7 +48,7 @@ grViz("digraph Soil_Strength {
   # several 'edge' statements
   #Soil Strength Exogenous Variables
   edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
-  Initial_SS->Burrow_Density
+  Initial_SS->Burrow_Density 
   Crab_Density->Burrow_Density [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
   
   #All Endogenous Variables
@@ -80,8 +80,10 @@ grViz("digraph Soil_Strength {
 ### Without Site
 grViz("digraph Soil_Strength {
       # a 'graph' statement
-      graph [overlap = false,
-             fontsize = 14]
+      graph [layout = dot,
+             overlap = false,
+             fontsize = 14,
+             rankdir = LR]
 
       # several 'node' statements
       # Exogenous Variables
@@ -121,17 +123,17 @@ grViz("digraph Soil_Strength {
   #Soil Strength Exogenous Variables
   edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   Initial_SS->Burrow_Density
-  Crab_Density->Burrow_Density [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
+  Crab_Density->Burrow_Density [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 3, label = '-0.035']
   
   #All Endogenous Variables
   edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 5]
   Depth -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
-  Initial_SS -> End_Mass_LB [color = SaddleBrown]
-  Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown]
+  Initial_SS -> End_Mass_LB [color = SaddleBrown, label = '-0.0069']
+  Burrow_Depth_Intrctn -> End_Mass_LB [color = SaddleBrown, label = '0.00060']
   Burrow_Density -> End_Mass_LB [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   
   edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 4]
-  CrabSoil_Intrctn->Burrow_Density
+  CrabSoil_Intrctn->Burrow_Density [label = '0.0038']
   }
 
   [1]: 'Crab Density'
@@ -145,7 +147,7 @@ grViz("digraph Soil_Strength {
 ") %>%
   export_svg %>% 
   charToRaw %>% 
-  rsvg_png("figures/Decomp_DAG.jpg")
+  rsvg_png("figures/Decomp_DAG_2.jpg")
 
 
 

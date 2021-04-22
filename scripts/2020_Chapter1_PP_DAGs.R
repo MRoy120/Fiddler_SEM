@@ -405,41 +405,40 @@ grViz("digraph Soil_Strength {
   #Soil Strength Exogenous Variables
   edge [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   Initial_SS->Burrow_Density
-  Crab_Density->Burrow_Density
+  Crab_Density->Burrow_Density 
   
   #Primary Production Exogenous Variables
   edge [color = forestgreen, arrowhead = normal, penwidth = 5, minlen = 2]
   Burrow_Density -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   Final_SS -> Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
   
-  #All Endogenous Variables
-  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 4]
-  Burrow_Density->Final_SS [color = steelblue]
-  Initial_SS->Final_SS
-  Crab_Density->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
-  
   #Crab Density and Soil Strength Interaction
   edge [color = steelblue, arrowhead = normal, penwidth = 5, minlen = 3]
-  CrabSoil_Intrctn->Burrow_Density
-  CrabSoil_Intrctn->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+  CrabSoil_Intrctn->Burrow_Density [label = '0.0027']
   
+  #All Endogenous Variables
+  edge [color = DimGray, arrowhead = normal, penwidth = 5, minlen = 4]
+  Burrow_Density->Final_SS [color = steelblue, label = '-0.34']
+  Initial_SS->Final_SS [label = '0.28']
+  Crab_Density->Spartina_Biomass [color = grey, arrowhead = normal, penwidth = 1, minlen = 3]
+
   #Soil Strength and Final Shoot Density Interaction
   edge [color = CadetBlue arrowhead = normal, penwidth = 5, minlen = 3]
-  SoilShoots_Intrctn->Spartina_Biomass [label = '0.32']
+  SoilShoots_Intrctn->Spartina_Biomass [label = '-0.00070']
   }
 
   [1]: 'Crab Density'
   [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
-  [3]: 'Burrow Density'
+  [3]: 'Burrow Density\\nR2=0.97'
   [4]: 'Initial Soil Strength'
-  [5]: 'Final Soil Strength'
+  [5]: 'Final Soil Strength\\nR2=0.58'
   [6]: 'Initial Shoot Density'
-  [7]: 'Spartina Biomass'
-  [8]: 'Final Shoot Density'
+  [7]: 'Spartina Biomass\\nR2=0.36'
+  [8]: 'Final Shoot Density\\nR2=0.93'
   [9]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
   [10]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
       
-")# %>%
+") %>%
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/PP_DAG_3.jpg")

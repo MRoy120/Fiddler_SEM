@@ -108,22 +108,22 @@ grViz("digraph Soil_Strength {
   
   # several 'edge' statements
   edge [color = grey, arrowhead = normal, minlen = 4, penwidth = 1]
-  Initial_SS->Burrow_Density [label = '-0.013']
-  Crab_Density->Burrow_Density [label = '-0.0085']
+  Initial_SS->Burrow_Density 
+  Crab_Density->Burrow_Density 
   
-  edge [color = DimGray, arrowhead = normal, minlen = 4, penwidth = 5]
-  CrabSoil_Intrctn->Burrow_Density [color = steelblue, label = '0.0027']
+  edge [color = DimGray, arrowhead = normal, minlen = 5, penwidth = 5]
+  CrabSoil_Intrctn->Burrow_Density [color = steelblue, label = '0.0027', minlen = 4]
   Burrow_Density->Final_SS [color = steelblue, label = '-0.41']
   Initial_SS->Final_SS [label = '0.32']
   }
 
   [1]: 'Crab Density'
   [2]: 'Crab Density and\\nInitial Soil Strength\\nInteraction\\n'
-  [3]: 'Burrow Density'
+  [3]: 'Burrow Density\\nR2=0.97'
   [4]: 'Initial Soil Strength'
-  [5]: 'Final Soil Strength'
+  [5]: 'Final Soil Strength\\nR2=0.57'
       
-") %>%
+") #%>%
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/SS_DAG.jpg",
