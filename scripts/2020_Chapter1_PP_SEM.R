@@ -9,7 +9,8 @@ Burrows_combined_NBglm <- glm.nb(data = combined_data_full,
                                    Density_Num *
                                    Pre_Pene_AVG +
                                    Year_Fac +
-                                   Site
+                                   Site *
+                                   Block
                                  ,
                                  link = "log"
 )
@@ -18,8 +19,9 @@ summary(Burrows_combined_NBglm)
 ## Initial Soil Strength
 Pre_Pene_combined_lm <- lm(data = combined_data_full, 
                            Pre_Pene_AVG ~
-                             Site +
-                             Year_Fac
+                             Year_Fac +
+                             Site *
+                             Block
 )
 summary(Pre_Pene_combined_lm)
 
@@ -28,10 +30,10 @@ Post_Pene_combined_lm <- lm(data = combined_data_full,
                             Post_Pene_AVG ~ 
                               Post_Burrow_Count + 
                               Pre_Pene_AVG +
-                              Site +
                               Year_Fac +
-                              Pre_Live_SD #*
-                              #Post_Live_SD
+                              Pre_Live_SD +
+                              Site *
+                              Block
 )
 summary(Post_Pene_combined_lm)
 
@@ -42,8 +44,9 @@ SD_combined_NBglm <- glm.nb(data = combined_data_full,
                               Post_Burrow_Count +
                               Pre_Live_SD +
                               Pre_Pene_AVG +
-                              Site +
-                              Year_Fac,
+                              Year_Fac +
+                              Site *
+                              Block,
                             link = "log"
 )
 summary(SD_combined_NBglm)
@@ -89,8 +92,9 @@ SB_Gamma_combined_glm <- glm(data = combined_data_full,
                                Density_Num +
                                Post_Live_SD * 
                                Post_Pene_AVG +
-                               Site +
-                               Year_Fac,
+                               Year_Fac +
+                               Site *
+                               Block,
                              family = Gamma(link = "log")
 )
 
@@ -109,6 +113,7 @@ combined_SEM <- psem(Post_Pene_combined_lm,
 
 summary(combined_SEM)
 
+piecewiseSEM::rsquared(combined_SEM)
 
 #### Alternate (less complex) Piecewise (Local) SEM for Primary Production####
 ### Building the Models

@@ -141,9 +141,50 @@ combined_data_full_2 <- combined_data_full %>%
                 Year_NonFactor = "Year",
                 Year = "Year_Fac")
 
+# Replication Reallocation ####
+combined_data_full <- combined_data_full %>%
+  group_by(Replication) %>%
+  mutate(Block = as.numeric(recode_factor(Replication,
+                                          "One" = 1,
+                                          "Two" = 2,
+                                          "Three" = 3,
+                                          "Four" = 4)))
+
 #### Decomposition ####
 #Load in the Decomp Data
-Decomp_2018 <- read_csv("data/Decomp_Summer_2018_2.csv")
+Decomp_2018 <- read_csv("data/Decomp_Summer_2018_2.csv") %>%
+  mutate(Block = as.numeric(recode_factor(Cage_Num,
+                                          "1_CC" = 1,
+                                          "1_4" = 1,
+                                          "1_8" = 1,
+                                          "1_12" = 1,
+                                          "1_16" = 1,
+                                          "1_20" = 1,
+                                          "1_CP" = 1,
+                                          "2_CC" = 2,
+                                          "2_4" = 2,
+                                          "2_8" = 2,
+                                          "2_12" = 2,
+                                          "2_16" = 2,
+                                          "2_20" = 2,
+                                          "2_CP" = 2,
+                                          "3_CC" = 3,
+                                          "3_4" = 3,
+                                          "3_8" = 3,
+                                          "3_12" = 3,
+                                          "3_16" = 3,
+                                          "3_20" = 3,
+                                          "3_CP" = 3,
+                                          "4_CC" = 4,
+                                          "4_4" = 4,
+                                          "4_8" = 4,
+                                          "4_12" = 4,
+                                          "4_16" = 4,
+                                          "4_20" = 4,
+                                          "4_CP" = 4,
+                                          "Two" = 4,
+                                          )))
+
 Decomp_2018_Wider <- Decomp_2018 %>%
   pivot_wider(names_from = Depth, values_from = End_Mass_LB)
 

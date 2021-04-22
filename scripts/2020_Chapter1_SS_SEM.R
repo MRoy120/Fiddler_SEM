@@ -8,8 +8,9 @@ Post_Pene_lm <- lm(data = combined_data_full,
                    Post_Pene_AVG ~
                      Post_Burrow_Count + 
                      Pre_Pene_AVG +
-                     Site +
-                     Year_Fac
+                     Year_Fac +
+                     Site *
+                     Block
 )
 summary(Post_Pene_lm)
 
@@ -18,8 +19,9 @@ Burrows_NBglm <- glm.nb(data = combined_data_full,
                         Post_Burrow_Count ~
                           Density_Num *
                           Pre_Pene_AVG +
-                          Site +
-                          Year_Fac
+                          Year_Fac +
+                          Site *
+                          Block
                         ,
                         link = "log"
 )
@@ -28,8 +30,9 @@ summary(Burrows_NBglm)
 #Initial Soil Strength
 Pre_Pene_lm <- lm(data = combined_data_full, 
                   Pre_Pene_AVG ~
-                    Site +
-                    Year_Fac
+                    Year_Fac +
+                    Site *
+                    Block
 )
 summary(Pre_Pene_lm)
 
@@ -38,8 +41,13 @@ SS_Model <- psem(Burrows_NBglm,
                  Post_Pene_lm,
                  Pre_Pene_lm
 )
+
+#SS_Model$data
+
 SS_Model_Summary <- summary(SS_Model)
 SS_Model_Summary
+
+rsquared(SS_Model)
 
 ## Generate a table
 # Isolate only the coefficients from the PSEM output
