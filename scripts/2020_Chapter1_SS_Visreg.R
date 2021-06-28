@@ -26,10 +26,50 @@ visreg(Burrows_NBglm,
   theme(plot.title = element_text(size = 22, 
                                   face = "bold"),
         plot.subtitle = element_text(size = 18,
-                                     face = "bold")) +
-  ggsave(filename = "figures/2020_ISS_CBD_ICD_Visreg.png",
-         width = 15, 
-         height = 5)
+                                     face = "bold")) #+
+  # ggsave(filename = "figures/2020_ISS_CBD_ICD_Visreg.png",
+  #        width = 15, 
+  #        height = 5)
+  
+ggplot(combined_data_full, aes(x = Pre_Pene_AVG,
+                                 y = Post_Burrow_Count,
+                                 color = Location)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(cut_interval(combined_data_full$Density_Num, n = 5))  
+
+ggplot(combined_data_full, aes(x = Pre_Pene_AVG,
+                                 y = Post_Burrow_Count,
+                                 color = Year)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    facet_wrap(cut_interval(combined_data_full$Density_Num, n = 5))
+
+ggplot(dplyr::filter(combined_data_full, Location == "PIE"), aes(x = Pre_Pene_AVG,
+                               y = Post_Burrow_Count)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~cut_interval(Density_Num, n = 5))
+
+ggplot(dplyr::filter(combined_data_full, Location == "NAN"), aes(x = Pre_Pene_AVG,
+                                                                 y = Post_Burrow_Count)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~cut_interval(Density_Num, n = 5))
+  
+ggplot(combined_data_full, aes(x = Post_Burrow_Count,
+                               y = Post_Pene_AVG,
+                               color = Year)) +
+  geom_point() +
+  geom_smooth(method = "lm")# +
+  #facet_wrap(cut_interval(combined_data_full$Pre_Pene_AVG, n = 5))
+
+ggplot(combined_data_full, aes(x = Density_Num,
+                               y = Post_Pene_AVG,
+                               color = Location)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(cut_interval(combined_data_full$Pre_Pene_AVG, n = 5))
 
 #Initial Crab Density to Final Burrow Density by Soil Strength
 visreg(Burrows_NBglm, 
@@ -216,7 +256,7 @@ visreg2d(Burrows_NBglm,
   theme(axis.text = element_text(size = 18),
         axis.title = element_text(size = 22)) +
   labs(title = "Interaction Plot of Soil Strength, Initial Crab Density,\nand Burrow Density",
-       subtitle = "Heat Map") +
+       subtitle = "Heat Map") #+
   ggsave(filename = "figures/2021_Crab_ISS_Burrows_Heat.png",
          width = 10, 
          height = 8)

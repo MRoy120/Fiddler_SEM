@@ -3,18 +3,7 @@ source("scripts/2020_data_cleaning.R")
 
 #### Building Models for Soil Strength SEM ####
 
-## Final Soil Strength
-Post_Pene_lm <- lm(data = combined_data_full, 
-                   Post_Pene_AVG ~
-                     Post_Burrow_Count + 
-                     Pre_Pene_AVG +
-                     Year_Fac +
-                     Site *
-                     Block
-)
-summary(Post_Pene_lm)
-
-#Burrows
+## Burrows
 Burrows_NBglm <- glm.nb(data = combined_data_full,
                         Post_Burrow_Count ~
                           Density_Num *
@@ -26,8 +15,32 @@ Burrows_NBglm <- glm.nb(data = combined_data_full,
                         link = "log"
 )
 summary(Burrows_NBglm)
+Anova(Burrows_NBglm)
 
-#Initial Soil Strength
+## Final Soil Strength
+# With Burrow Density and Initial Soil Strength Interacting
+# summary(lm(data = combined_data_full,
+#    Post_Pene_AVG ~
+#      Post_Burrow_Count *
+#      Pre_Pene_AVG +
+#      Year_Fac +
+#      Site *
+#      Block
+# ))
+
+# With no interaction
+Post_Pene_lm <- lm(data = combined_data_full, 
+                   Post_Pene_AVG ~
+                     Post_Burrow_Count +
+                     Pre_Pene_AVG +
+                     Year_Fac +
+                     Site *
+                     Block
+)
+summary(Post_Pene_lm)
+Anova(Post_Pene_lm)
+
+## Initial Soil Strength
 Pre_Pene_lm <- lm(data = combined_data_full, 
                   Pre_Pene_AVG ~
                     Year_Fac +
@@ -35,6 +48,7 @@ Pre_Pene_lm <- lm(data = combined_data_full,
                     Block
 )
 summary(Pre_Pene_lm)
+Anova(Pre_Pene_lm)
 
 #### Soil Strength Piecewise SEM ####
 SS_Model <- psem(Burrows_NBglm,
@@ -46,6 +60,16 @@ SS_Model <- psem(Burrows_NBglm,
 
 SS_Model_Summary <- summary(SS_Model)
 SS_Model_Summary
+
+# lapply(SS_Model, formula)
+# 
+# system.time(
+#   SS_SEM_Boot <- bootEff(SS_Model, R = 10000, seed = 53908)
+# )
+# 
+# eff <- suppressWarnings(semEff(SS_SEM_Boot))
+# 
+# eff$Summary$Post_Pene_lm
 
 rsquared(SS_Model)
 
@@ -68,4 +92,9 @@ summary(lm(data = combined_data_full,
 #Final
 summary(lm(data = combined_data_full, 
            Post_Pene_AVG ~ Site + Year))
+
+
+
+
+
 

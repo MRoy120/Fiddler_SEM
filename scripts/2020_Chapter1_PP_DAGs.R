@@ -337,7 +337,7 @@ grViz("digraph Soil_Strength {
   [9]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
   [10]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
       
-") %>%
+") #%>%
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/PP_DAG_2.jpg")
@@ -438,7 +438,7 @@ grViz("digraph Soil_Strength {
   [9]: 'Initial Shoot Density and\\nFinal Shoot Density\\nInteraction\\n'
   [10]: 'Final Soil Strength and\\nFinal Shoot Density\\nInteraction\\n'
       
-") %>%
+") #%>%
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/PP_DAG_3.jpg")

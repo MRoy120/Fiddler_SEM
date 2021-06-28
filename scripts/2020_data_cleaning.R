@@ -1,3 +1,6 @@
+# Loading in Libraries ####
+source("scripts/2020_Chapter1_libraries.R")
+
 #### Loading in My Data ####
 combined_data <- read_csv("data/Complete_CrabCageExp.csv")
 
@@ -148,23 +151,28 @@ combined_data_full <- combined_data_full %>%
                                           "One" = 1,
                                           "Two" = 2,
                                           "Three" = 3,
-                                          "Four" = 4)))
+                                          "Four" = 4))) %>%
+  ungroup()
+
+combined_data_full_test <- combined_data_full %>%
+  group_by(Block) %>%
+  mutate(Block_2 = as.character(recode_factor(as.character(Block),
+                                          "1" = "One",
+                                          "2" = "Two",
+                                          "3" = "Three",
+                                          "4" = "Four"))) %>%
+  ungroup()
 
 #### Decomposition ####
 #Load in the Decomp Data
 Decomp_2018 <- read_csv("data/Decomp_Summer_2018_2.csv") %>%
   mutate(Block = as.numeric(recode_factor(Cage_Num,
-                                          "1_CC" = 1,
-                                          "1_4" = 1,
-                                          "1_8" = 1,
-                                          "1_12" = 1,
-                                          "1_16" = 1,
-                                          "1_20" = 1,
+                                          "1_CC" = 1, "1_4" = 1,
+                                          "1_8" = 1, "1_12" = 1,
+                                          "1_16" = 1, "1_20" = 1,
                                           "1_CP" = 1,
-                                          "2_CC" = 2,
-                                          "2_4" = 2,
-                                          "2_8" = 2,
-                                          "2_12" = 2,
+                                          "2_CC" = 2,"2_4" = 2,
+                                          "2_8" = 2,"2_12" = 2,
                                           "2_16" = 2,
                                           "2_20" = 2,
                                           "2_CP" = 2,
@@ -298,3 +306,52 @@ Density_NN_Colors_2 <- scale_color_manual("Initial Density",
                                                      "Sixteen" = "purple3",
                                                      "Twenty" = "black"))
 
+# Centering Predictors for Gamma PP Model ####
+# combined_data_long <- combined_data_full %>%
+#   tidyr::pivot_longer(cols = c(Pre_Live_SD,
+#                                Pre_Pene_AVG,
+#                                Post_Live_SD,
+#                                Post_Pene_AVG,
+#                                Post_Burrow_Count,
+#                                Spartina_Biomass),
+#                       names_to = "treatments",
+#                       values_to = "measurements") %>%
+#   dplyr::select(treatments, 
+#                 measurements,
+#                 Year,
+#                 Location,
+#                 Cage_Num, 
+#                 Replication,
+#                 Density_NN,
+#                 Density_Num,
+#                 Site,
+#                 Year_Fac,
+#                 Block)
+
+
+# combined_data_centered <- combined_data_long %>%
+#   dplyr::group_by(Location, treatments) %>%
+#   dplyr::summarise(mean_treatments = mean(measurements))
+  # summarise(pre_live_centered = mean(Pre_Live_SD),
+  #        pre_pene_centered = mean(Pre_Pene_AVG),
+  #        post_live_centered = mean(Post_Live_SD),
+  #        post_pene_centered = mean(Post_Pene_AVG),
+  #        post_burrow_centered = mean(Post_Burrow_Count),
+  #        spartina_centered = mean(Spartina_Biomass))
+  
+combined_data_centered <- combined_data_full %>%
+  #dplyr::group_by(Location) %>%
+  dplyr::mutate(pre_live_centered = as.numeric(Pre_Live_SD - mean(Pre_Live_SD)),
+       pre_pene_centered = as.numeric(Pre_Pene_AVG - mean(Pre_Pene_AVG)),
+       post_live_centered = as.numeric(Post_Live_SD - mean(Post_Live_SD)),
+       post_pene_centered = as.numeric(Post_Pene_AVG - mean(Post_Pene_AVG)),
+       post_burrow_centered = as.numeric(Post_Burrow_Count - mean(Post_Burrow_Count))) %>%
+  ungroup()
+
+combined_data_full_centered <- left_join(combined_data_full, combined_data_centered)
+
+# combined_data_full_centered <- combined_data_full_centered %>%
+#   mutate(NPP = Post_Live_SD - Pre_Live_SD)
+
+combined_data_full_centered_2 <- combined_data_full_centered %>%
+  filter(Spartina_Biomass > 1)

@@ -3,7 +3,7 @@ source("scripts/2020_data_cleaning.R")
 
 #### Building Models for Decomposition SEM ####
 
-#Burrows
+## Burrows
 Burrows_decomp_NBglm <- glm.nb(data = Decomp_2018_3, 
                                Post_Burrow_Count ~ 
                                  Density_Num *
@@ -11,26 +11,53 @@ Burrows_decomp_NBglm <- glm.nb(data = Decomp_2018_3,
                                  Site *
                                  Block,
                                    link = "log")
-summary(Burrows_decomp_NBglm)
 
-#Initial Soil Strength
+# Checking Model Fit and Colinearity
+Decomp_Burrows_res <- simulateResiduals(Burrows_decomp_NBglm)
+plot(Decomp_Burrows_res)
+vif(Burrows_decomp_NBglm)
+check_collinearity(Burrows_decomp_NBglm)
+
+# Determining Relationships Between Response and Predictors
+summary(Burrows_decomp_NBglm)
+Anova(Burrows_decomp_NBglm)
+
+## Initial Soil Strength
 Pre_Pene_decomp_lm <- lm(data = Decomp_2018_3, 
                          Pre_Pene_AVG ~
                            Site *
                            Block
 )
+
+# Checking Model Fit and Colinearity
+Decomp_pre_pene_res <- simulateResiduals(Pre_Pene_decomp_lm)
+plot(Decomp_pre_pene_res)
+vif(Pre_Pene_decomp_lm)
+check_collinearity(Pre_Pene_decomp_lm)
+
+# Determining Relationships Between Response and Predictors
 summary(Pre_Pene_decomp_lm)
+Anova(Pre_Pene_decomp_lm)
 
 #Decomposition
 Decomp_lm <- lm(data = Decomp_2018_3,
                 Mass_Trans ~
-                  Post_Burrow_Count *
-                  Depth +
                   Pre_Pene_AVG +
+                  Depth *
+                  Post_Burrow_Count +
                   Site *
                   Block
 )
+
+# Checking Model Fit and Colinearity
+Decomp_res <- simulateResiduals(Decomp_lm)
+plot(Decomp_res)
+vif(Decomp_lm)
+check_collinearity(Decomp_lm)
+
+# Determining Relationships Between Response and Predictors
 summary(Decomp_lm)
+Anova(Decomp_lm)
 
 #### Decomposition SEM ####
 decomp_SEM <- psem(Pre_Pene_decomp_lm,
