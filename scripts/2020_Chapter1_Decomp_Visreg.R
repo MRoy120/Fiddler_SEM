@@ -153,8 +153,19 @@ visreg2d(Decomp_lm,
   theme(axis.text = element_text(size = 18),
         axis.title = element_text(size = 22)) +
   labs(title = "Interaction Plot of Burrow Density, Depth,\nand Decomposition",
-       subtitle = "Heat Map") +
-  ggsave(filename = "figures/2021_Decomp_Interaction.png",
-         width = 10, 
-         height = 8)
+       subtitle = "Heat Map")# +
+  # ggsave(filename = "figures/2021_Decomp_Interaction.png",
+  #        width = 10, 
+  #        height = 8)
 
+ggplot(data = Decomp_2018_3, aes(x = as.character(Depth),
+                                 y = Mass_Trans,
+                                 color = Depth)) +
+  geom_boxplot() +
+  facet_wrap(vars(Block))
+
+ggplot(data = Decomp_2018_3, aes(x = as.character(Depth),
+                                 y = Mass_Trans,
+                                 color = Depth)) +
+  geom_boxplot() +
+  facet_wrap(vars(Location))

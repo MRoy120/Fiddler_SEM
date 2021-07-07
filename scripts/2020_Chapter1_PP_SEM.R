@@ -94,8 +94,8 @@ vif(Initial_SD_combined_NBglm )
 check_collinearity(Initial_SD_combined_NBglm )
 
 # Determining Relationships Between Response and Predictors
-summary(Initial_SD_combined_NBglm )
-Anova(Initial_SD_combined_NBglm )
+summary(Initial_SD_combined_NBglm)
+Anova(Initial_SD_combined_NBglm)
 
 ## Final Shoot Density (SD)
 SD_combined_NBglm <- glm.nb(data = combined_data_full,
@@ -240,7 +240,10 @@ combined_SEM <- psem(Post_Pene_combined_lm,
                      Pre_Pene_combined_lm)
 
 summary(combined_SEM)
+summary()
+piecewiseSEM::summary.psem(combined_SEM, test.type = "Anova")
 plot(combined_SEM)
+coefs(combined_SEM, standardize = "scale")
 
 #coefs(combined_SEM, standardize = "range", standardize.type = "latent.linear")
 

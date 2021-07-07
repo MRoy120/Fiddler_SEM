@@ -58,6 +58,7 @@ check_collinearity(Decomp_lm)
 # Determining Relationships Between Response and Predictors
 summary(Decomp_lm)
 Anova(Decomp_lm)
+rsquared(Decomp_lm)
 
 #### Decomposition SEM ####
 decomp_SEM <- psem(Pre_Pene_decomp_lm,
@@ -66,6 +67,7 @@ decomp_SEM <- psem(Pre_Pene_decomp_lm,
 )
 decomp_summary <- summary(decomp_SEM) 
 decomp_summary
+anova(decomp_SEM)
 
 rsquared(decomp_SEM)
 

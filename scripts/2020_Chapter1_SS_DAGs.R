@@ -81,19 +81,19 @@ grViz("digraph Soil_Strength {
              overlap = false,
              fontsize = 14,
              ranksep = .25,
-             rankdir = LR]
+             rankdir = TD]
 
       # several 'node' statements
       # Exogenous Variables
       node [shape = rectangle,
-            fontname = Times,
+            fontname = Arial,
             width = 1.3,
             fontcolor = darkslategray,
             color = darkslategray,
             nodesep = 1,
             penwidth = 2]
       Crab_Density [label = '@@1']
-      CrabSoil_Intrctn [label = '@@2', color = steelblue, height = 0.9]
+      CrabSoil_Intrctn [label = '@@2', color = steelblue, headport = 'n', height = 0.9]
       Initial_SS [label = '@@4']
       
       # Endogenous Variables
@@ -107,14 +107,14 @@ grViz("digraph Soil_Strength {
       Final_SS [label = '@@5']
   
   # several 'edge' statements
-  edge [color = grey, arrowhead = normal, minlen = 4, penwidth = 1]
-  Initial_SS->Burrow_Density 
-  Crab_Density->Burrow_Density 
+  edge [color = grey, arrowhead = normal, minlen = 5, penwidth = 1]
+  Initial_SS->Burrow_Density [headport = 'w', tailport = 's']
+  Crab_Density->Burrow_Density [headport = 'e']
   
   edge [color = DimGray, arrowhead = normal, minlen = 5, penwidth = 5]
-  CrabSoil_Intrctn->Burrow_Density [color = steelblue, label = '0.0027', minlen = 4]
-  Burrow_Density->Final_SS [color = steelblue, label = '-0.41']
-  Initial_SS->Final_SS [label = '0.32']
+  CrabSoil_Intrctn->Burrow_Density [color = steelblue, headport = 'n', label = '  0.0027', minlen = 4]
+  Burrow_Density->Final_SS [color = steelblue, tailport = 's', headport = 'n', label = '  -0.41']
+  Initial_SS->Final_SS [label = '  0.32', headport = 'w', tailport = 's']
   }
 
   [1]: 'Crab Density'
@@ -127,5 +127,5 @@ grViz("digraph Soil_Strength {
   export_svg %>% 
   charToRaw %>% 
   rsvg_png("figures/SS_DAG.jpg",
-           width = 10000,
-           height = 4000)
+           width = 8000,
+           height = 10000)
